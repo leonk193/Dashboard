@@ -8,10 +8,11 @@
  * NOVA LITE — a simple, drop-in AI mentor for ANY dashboard.
  * Single self-contained file. No backend, no build step.
  *
- * HOW IT WORKS (using Free Claude Code proxy):
- *   • The viewer configures the Free Claude Code proxy running locally
+ * HOW IT WORKS (bring-your-own-key):
+ *   • The viewer pastes their OWN Anthropic API key (stored only in
+ *     their browser's localStorage — never sent anywhere but Anthropic).
  *   • Nova reads whatever the dashboard saved in localStorage for context.
- *   • Calls the Claude API through the local proxy using the
+ *   • Calls the Claude API directly from the browser using the
  *     `anthropic-dangerous-direct-browser-access` header.
  *
  * This is the lightweight version: a flat CSS orb (no 3D), basic chat.
@@ -92,13 +93,12 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
 
     <div class="keypanel" id="keypanel">
       <div class="keybar">
-        <input id="keyInput" type="password" placeholder="Confirm proxy setup (click Save)" autocomplete="off" />
+        <input id="keyInput" type="password" placeholder="paste your Anthropic API key (sk-ant-…)" autocomplete="off" />
         <button id="keySave">Save</button>
       </div>
       <div class="hint" id="hint">
-        Your requests are routed through the Free Claude Code proxy running locally.
-        Get it at <a href="https://github.com/alishahryar1/free-claude-code" target="_blank" rel="noopener">github.com/alishahryar1/free-claude-code</a>.
-        Make sure to configure the proxy token as "freecc" in the admin UI.
+        Your key is stored only in <b>this browser</b> and sent straight to Anthropic — never to us.
+        Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
       </div>
     </div>
 
@@ -127,22 +127,13 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
 
   // ---- key handling ----
   function savedKey(){ try { return localStorage.getItem(KEY_LS) || ''; } catch(e){ return ''; } }
-  // Check if proxy is configured (we'll use localStorage to track if user has acknowledged the proxy setup)
-  const proxyConfigured = localStorage.getItem('proxy_configured') === 'true';
-  if (proxyConfigured) {
-    hint.classList.add('saved');
-    hint.innerHTML = '✓ Free Claude Code proxy configured with token "freecc". Ask away.';
-    keyInput.placeholder = '•••• proxy active ••••';
-    keyToggle.classList.add('has-key');
-  }
+  if (savedKey()) { hint.classList.add('saved'); hint.innerHTML = '✓ Key saved in this browser. Ask away.'; keyInput.placeholder = '•••• key saved ••••'; keyToggle.classList.add('has-key'); }
   document.getElementById('keySave').addEventListener('click', () => {
-    // For the proxy setup, we're just confirming the user wants to proceed
-    // The actual token "freecc" is hardcoded in the fetch request above
-    try { localStorage.setItem('proxy_configured', 'true'); } catch(e){}
-    keyInput.value = '';
-    keyInput.placeholder = '•••• proxy active ••••';
-    hint.classList.add('saved');
-    hint.innerHTML = '✓ Free Claude Code proxy configured with token "freecc". Ask away.';
+    const k = keyInput.value.trim();
+    if (!k) return;
+    try { localStorage.setItem(KEY_LS, k); } catch(e){}
+    keyInput.value = ''; keyInput.placeholder = '•••• key saved ••••';
+    hint.classList.add('saved'); hint.innerHTML = '✓ Key saved in this browser. Ask away.';
     keyToggle.classList.add('has-key');
     keypanel.classList.remove('open'); // tuck it away so it's not on screen
   });
@@ -187,35 +178,34 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
   let busy = false;
   async function ask(text){
     text = (text||'').trim(); if (!text || busy) return;
-    // For the proxy, we don't actually need the user's API key, but we keep the check for UX consistency
-    // const key = savedKey();
-    // if (!key){ addCoach('- Configure your Free Claude Code proxy first, then ask me again.'); return; }
+    const key = savedKey();
+    if (!key){ addCoach('- Paste your **Anthropic API key** above first, then ask me again.'); return; }
     busy = true; addUser(text); input.value = '';
     setOrb('think');
     const loading = addCoach('<span class="dots"><i></i><i></i><i></i></span>');
     try {
-      const res = await fetch('http://localhost:8082/v1/messages', {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'Authorization': 'Bearer freecc',
+          'x-api-key': key,
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-5',
+          model: 'claude-opus-4-8',
           max_tokens: 1024,
           system: SYS + JSON.stringify(dashboardData()),
           messages: [{ role: 'user', content: text }],
         }),
       });
       const json = await res.json();
-      if (json.error){ loading.querySelector('div:last-child').innerHTML = render('- ' + (json.error.message || 'Authentication failed - check your proxy token configuration.')); setOrb(''); busy = false; return; }
+      if (json.error){ loading.querySelector('div:last-child').innerHTML = render('- ' + (json.error.message || 'Something went wrong — check your API key.')); setOrb(''); busy = false; return; }
       const reply = (json.content && json.content[0] && json.content[0].text) || 'Hmm, no reply.';
       loading.querySelector('div:last-child').innerHTML = render(reply);
       setOrb('happy'); setTimeout(() => setOrb(''), 2500);
     } catch(e){
-      loading.querySelector('div:last-child').innerHTML = render('- Could not reach the proxy or authentication failed - check that Free Claude Code is running and properly configured.');
+      loading.querySelector('div:last-child').innerHTML = render('- Could not reach Anthropic — check your connection and key.');
       setOrb('');
     }
     busy = false;
@@ -224,7 +214,7 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
   document.getElementById('send').addEventListener('click', () => ask(input.value));
   input.addEventListener('keydown', e => { if (e.key === 'Enter') ask(input.value); });
 
-  addCoach('Hey — I am <b>Nova</b>. Make sure your Free Claude Code proxy is running with token "freecc" configured, then ask me about food, training, sleep, or where to start. I keep it short and give you <b>one thing to act on</b>.');
+  addCoach('Hey — I am <b>Nova</b>. Paste your key above, then ask me about food, training, sleep, or where to start. I keep it short and give you <b>one thing to act on</b>.');
 })();
 </script>
 </body>
