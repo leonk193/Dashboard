@@ -8,11 +8,11 @@
  * NOVA LITE — a simple, drop-in AI mentor for ANY dashboard.
  * Single self-contained file. No backend, no build step.
  *
- * HOW IT WORKS (using NVIDIA NIM):
+ * HOW IT WORKS (using NVIDIA NIM via proxy):
  *   • The viewer uses their NVIDIA NIM API key (stored only in
- *     their browser's localStorage — never sent anywhere but NIM).
+ *     their browser's localStorage — sent to our proxy, which forwards it to NIM).
  *   • Nova reads whatever the dashboard saved in localStorage for context.
- *   • Calls the NIM API directly from the browser using standard HTTP headers.
+ *   • Calls the NIM API via our proxy to avoid CORS issues.
  *
  * This is the lightweight version: a flat CSS orb (no 3D), basic chat.
  * The premium build (3D avatar, Spark voice scheduler, secure server
@@ -95,8 +95,8 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
         <input id="keyInput" type="password" placeholder="paste your NVIDIA NIM API key" autocomplete="off" />
         <button id="keySave">Save</button>
       </div>
-      <div class="hint" id="hint">
-        Your key is stored only in <b>this browser</b> and sent straight to NVIDIA NIM — never to us.
+      <hint" id="hint">
+        Your key is stored only in <b>this browser</b> and sent to our proxy, which forwards it to NVIDIA NIM — never to us directly.
         Get one at <a href="https://build.nvidia.com/nim" target="_blank" rel="noopener">build.nvidia.com/nim</a>.
       </div>
     </div>
@@ -132,7 +132,7 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
     if (!k) return;
     try { localStorage.setItem(KEY_LS, k); } catch(e){}
     keyInput.value = ''; keyInput.placeholder = '•••• key saved ••••';
-    hint.classList.add('saved'); hint.innerHTML = '✓ NIM API key saved. Ask away.';
+    hint.classList.add('saved'); hint.innerHTML = '✓ API key saved. Ask away.';
     keyToggle.classList.add('has-key');
     keypanel.classList.remove('open'); // tuck it away so it's not on screen
   });
@@ -183,11 +183,10 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
     setOrb('think');
     const loading = addCoach('<span class="dots"><i></i><i></i><i></i></span>');
     try {
-      const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+      const res = await fetch('/api/nim-proxy', {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'authorization': 'Bearer ' + key,
         },
         body: JSON.stringify({
           model: 'nvidia/nemotron-3-super-120b-a12b', // Using the Nemotron 3 Super model on NIM
@@ -210,9 +209,16 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
       loading.querySelector('div:last-child').innerHTML = render(reply);
       setOrb('happy'); setTimeout(() => setOrb(''), 2500);
     } catch(e){
-      console.error('NIM fetch error:', e);
-      let errMsg = '- Could not reach NVIDIA NIM.';
-      if (e.message) errMsg += ' ' + e.message;
+      console.error('Proxy fetch error:', e);
+      let errMsg = '- Could not reach the AI service: ';
+      if (e.message) {
+        errMsg += e.message;
+        if (e.message.includes('Failed to fetch')) {
+          errMsg += '. This often means: 1) No internet connection, 2) Server issue with the proxy, 3) Running HTML file directly (try serving via local web server), or 4) Ad-blocker interfering.';
+        }
+      } else {
+        errMsg += 'Unknown error';
+      }
       loading.querySelector('div:last-child').innerHTML = render(errMsg);
       setOrb('');
     }
