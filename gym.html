@@ -3662,20 +3662,42 @@ img, video, canvas, svg { max-width: 100%; }
     text = (text||'').trim(); if (!text || busy) return;
     const key = savedKey();
     addMsg('user', md(text));
-    if (!key){ addMsg('coach', md("Paste your **Anthropic API key** on the Nova page first (the 🧠 tile on the home screen) — it's saved in this browser and I'll use it here too.")); return; }
+    if (!key){ addMsg('coach', md("Paste your **NVIDIA NIM API key** on the Nova page first (the 🧠 tile on the home screen) — it's saved in this browser and I'll use it here too.")); return; }
     busy = true;
     const loading = addMsg('coach', '<span class="nv-dots"><i></i><i></i><i></i></span>');
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/nim-proxy', {
         method: 'POST',
-        headers: { 'content-type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-        body: JSON.stringify({ model:'claude-opus-4-8', max_tokens:1024, system: SYS + gymContext(), messages:[{role:'user', content:text}] }),
+        headers: { 'content-type':'application/json' },
+        body: JSON.stringify({
+          model: 'nvidia/nemotron-3-super-120b-a12b',
+          messages: [
+            { role: 'system', content: SYS + gymContext() },
+            { role: 'user', content: text }
+          ],
+          max_tokens: 1024,
+          temperature: 0.2,
+          top_p: 0.7,
+          stream: false
+        })
       });
       const json = await res.json();
-      if (json.error){ loading.innerHTML = md('- ' + (json.error.message || 'Something went wrong — check your API key.')); busy=false; return; }
-      const reply = (json.content && json.content[0] && json.content[0].text) || 'Hmm, no reply.';
+      if (json.error){ loading.innerHTML = md('- ' + (json.error.message || 'Something went wrong — check your proxy reported.')); busy=false; return; }
+      const reply = (json.choices && json.choices[0] && json.choices[0].message?.content) || 'Hmm, no reply.';
       loading.innerHTML = md(reply);
-    } catch(e){ loading.innerHTML = md('- Could not reach Anthropic — check your connection and key.'); }
+    } catch(e){
+      console.error('NIM proxy error:', e);
+      let errMsg = '- Could not reach the AI service: ';
+      if (e.message) {
+        errMsg += e.message;
+        if (e.message.includes('Failed to fetch')) {
+          errMsg += '. This often means: 1) No internet connection, 2) Server issue with the proxy, 3) Running HTML file directly (try serving via local web server), or 4) Ad-blocker interfering.';
+        }
+      } else {
+        errMsg += 'Unknown error';
+      }
+      loading.innerHTML = md(errMsg);
+    }
     body.scrollTop = body.scrollHeight; busy = false;
   }
 
