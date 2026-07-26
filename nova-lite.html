@@ -8,12 +8,12 @@
  * NOVA LITE — a simple, drop-in AI mentor for ANY dashboard.
  * Single self-contained file. No backend, no build step.
  *
- * HOW IT WORKS (bring-your-own-key):
- *   • The viewer pastes their OWN Anthropic API key (stored only in
- *     their browser's localStorage — never sent anywhere but Anthropic).
+ * HOW IT WORKS (using NVIDIA NIM):
+ *   • The viewer uses their NVIDIA NIM API key (stored only in
+ *     their browser's localStorage — never sent anywhere but NIM).
  *   • Nova reads whatever the dashboard saved in localStorage for context.
- *   • Calls the Claude API directly from the browser using the
- *     `anthropic-dangerous-direct-browser-access` header.
+ *   • Calls the NIM API directly from the browser using the
+ *     `anthropic-dangerous-direct-browser-access` header (harmless for NIM).
  *
  * This is the lightweight version: a flat CSS orb (no 3D), basic chat.
  * The premium build (3D avatar, Spark voice scheduler, secure server
@@ -93,12 +93,12 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
 
     <div class="keypanel" id="keypanel">
       <div class="keybar">
-        <input id="keyInput" type="password" placeholder="paste your Anthropic API key (sk-ant-…)" autocomplete="off" />
+        <input id="keyInput" type="password" placeholder="paste your NVIDIA NIM API key" autocomplete="off" />
         <button id="keySave">Save</button>
       </div>
       <div class="hint" id="hint">
-        Your key is stored only in <b>this browser</b> and sent straight to Anthropic — never to us.
-        Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
+        Your key is stored only in <b>this browser</b> and sent straight to NVIDIA NIM — never to us.
+        Get one at <a href="https://build.nvidia.com/nim" target="_blank" rel="noopener">build.nvidia.com/nim</a>.
       </div>
     </div>
 
@@ -127,13 +127,13 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
 
   // ---- key handling ----
   function savedKey(){ try { return localStorage.getItem(KEY_LS) || ''; } catch(e){ return ''; } }
-  if (savedKey()) { hint.classList.add('saved'); hint.innerHTML = '✓ Key saved in this browser. Ask away.'; keyInput.placeholder = '•••• key saved ••••'; keyToggle.classList.add('has-key'); }
+  if (savedKey()) { hint.classList.add('saved'); hint.innerHTML = '✓ NIM API key saved. Ask away.'; keyInput.placeholder = '•••• key saved ••••'; keyToggle.classList.add('has-key'); }
   document.getElementById('keySave').addEventListener('click', () => {
     const k = keyInput.value.trim();
     if (!k) return;
     try { localStorage.setItem(KEY_LS, k); } catch(e){}
     keyInput.value = ''; keyInput.placeholder = '•••• key saved ••••';
-    hint.classList.add('saved'); hint.innerHTML = '✓ Key saved in this browser. Ask away.';
+    hint.classList.add('saved'); hint.innerHTML = '✓ NIM API key saved. Ask away.';
     keyToggle.classList.add('has-key');
     keypanel.classList.remove('open'); // tuck it away so it's not on screen
   });
@@ -179,33 +179,38 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
   async function ask(text){
     text = (text||'').trim(); if (!text || busy) return;
     const key = savedKey();
-    if (!key){ addCoach('- Paste your **Anthropic API key** above first, then ask me again.'); return; }
+    if (!key){ addCoach('- Paste your **NVIDIA NIM API key** above first, then ask me again.'); return; }
     busy = true; addUser(text); input.value = '';
     setOrb('think');
     const loading = addCoach('<span class="dots"><i></i><i></i><i></i></span>');
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'x-api-key': key,
-          'anthropic-version': '2023-06-01',
+          'authorization': 'Bearer ' + key,
+          // Note: anthropic-dangerous-direct-browser-access is ignored by NIM but harmless
           'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
-          model: 'claude-opus-4-8',
+          model: 'nvidia/nemotron-3-super-120b-a12b', // Using the Nemotron 3 Super model on NIM
+          messages: [
+            { role: 'system', content: SYS + JSON.stringify(dashboardData()) },
+            { role: 'user', content: text }
+          ],
           max_tokens: 1024,
-          system: SYS + JSON.stringify(dashboardData()),
-          messages: [{ role: 'user', content: text }],
+          temperature: 0.2,
+          top_p: 0.7,
+          stream: false
         }),
       });
       const json = await res.json();
       if (json.error){ loading.querySelector('div:last-child').innerHTML = render('- ' + (json.error.message || 'Something went wrong — check your API key.')); setOrb(''); busy = false; return; }
-      const reply = (json.content && json.content[0] && json.content[0].text) || 'Hmm, no reply.';
+      const reply = (json.choices && json.choices[0] && json.choices[0].message?.content) || 'Hmm, no reply.';
       loading.querySelector('div:last-child').innerHTML = render(reply);
       setOrb('happy'); setTimeout(() => setOrb(''), 2500);
     } catch(e){
-      loading.querySelector('div:last-child').innerHTML = render('- Could not reach Anthropic — check your connection and key.');
+      loading.querySelector('div:last-child').innerHTML = render('- Could not reach NVIDIA NIM — check your connection and API key.');
       setOrb('');
     }
     busy = false;
@@ -214,7 +219,7 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
   document.getElementById('send').addEventListener('click', () => ask(input.value));
   input.addEventListener('keydown', e => { if (e.key === 'Enter') ask(input.value); });
 
-  addCoach('Hey — I am <b>Nova</b>. Paste your key above, then ask me about food, training, sleep, or where to start. I keep it short and give you <b>one thing to act on</b>.');
+  addCoach('Hey — I am <b>Nova</b>. Paste your NVIDIA NIM API key above, then ask me about food, training, sleep, or where to start. I keep it short and give you <b>one thing to act on</b>.');
 })();
 </script>
 </body>
