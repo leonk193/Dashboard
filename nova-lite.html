@@ -92,12 +92,13 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
 
     <div class="keypanel" id="keypanel">
       <div class="keybar">
-        <input id="keyInput" type="password" placeholder="Configure Free Claude Code proxy (click Save)" autocomplete="off" />
+        <input id="keyInput" type="password" placeholder="Confirm proxy setup (click Save)" autocomplete="off" />
         <button id="keySave">Save</button>
       </div>
       <div class="hint" id="hint">
         Your requests are routed through the Free Claude Code proxy running locally.
         Get it at <a href="https://github.com/alishahryar1/free-claude-code" target="_blank" rel="noopener">github.com/alishahryar1/free-claude-code</a>.
+        Make sure to configure the proxy token as "freecc" in the admin UI.
       </div>
     </div>
 
@@ -130,17 +131,18 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
   const proxyConfigured = localStorage.getItem('proxy_configured') === 'true';
   if (proxyConfigured) {
     hint.classList.add('saved');
-    hint.innerHTML = '✓ Free Claude Code proxy configured. Ask away.';
+    hint.innerHTML = '✓ Free Claude Code proxy configured with token "freecc". Ask away.';
     keyInput.placeholder = '•••• proxy active ••••';
     keyToggle.classList.add('has-key');
   }
   document.getElementById('keySave').addEventListener('click', () => {
-    // For the proxy, we don't actually need to save an API key, but we'll mark that the user has configured it
+    // For the proxy setup, we're just confirming the user wants to proceed
+    // The actual token "freecc" is hardcoded in the fetch request above
     try { localStorage.setItem('proxy_configured', 'true'); } catch(e){}
     keyInput.value = '';
     keyInput.placeholder = '•••• proxy active ••••';
     hint.classList.add('saved');
-    hint.innerHTML = '✓ Free Claude Code proxy configured. Ask away.';
+    hint.innerHTML = '✓ Free Claude Code proxy configured with token "freecc". Ask away.';
     keyToggle.classList.add('has-key');
     keypanel.classList.remove('open'); // tuck it away so it's not on screen
   });
@@ -196,7 +198,7 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'x-api-key': 'freecc',
+          'Authorization': 'Bearer freecc',
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true',
         },
@@ -208,12 +210,12 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
         }),
       });
       const json = await res.json();
-      if (json.error){ loading.querySelector('div:last-child').innerHTML = render('- ' + (json.error.message || 'Something went wrong — check your proxy connection.')); setOrb(''); busy = false; return; }
+      if (json.error){ loading.querySelector('div:last-child').innerHTML = render('- ' + (json.error.message || 'Authentication failed - check your proxy token configuration.')); setOrb(''); busy = false; return; }
       const reply = (json.content && json.content[0] && json.content[0].text) || 'Hmm, no reply.';
       loading.querySelector('div:last-child').innerHTML = render(reply);
       setOrb('happy'); setTimeout(() => setOrb(''), 2500);
     } catch(e){
-      loading.querySelector('div:last-child').innerHTML = render('- Could not reach the proxy — check that Free Claude Code is running on http://localhost:8082');
+      loading.querySelector('div:last-child').innerHTML = render('- Could not reach the proxy or authentication failed - check that Free Claude Code is running and properly configured.');
       setOrb('');
     }
     busy = false;
@@ -222,7 +224,7 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
   document.getElementById('send').addEventListener('click', () => ask(input.value));
   input.addEventListener('keydown', e => { if (e.key === 'Enter') ask(input.value); });
 
-  addCoach('Hey — I am <b>Nova</b>. Configure the Free Claude Code proxy above, then ask me about food, training, sleep, or where to start. I keep it short and give you <b>one thing to act on</b>.');
+  addCoach('Hey — I am <b>Nova</b>. Make sure your Free Claude Code proxy is running with token "freecc" configured, then ask me about food, training, sleep, or where to start. I keep it short and give you <b>one thing to act on</b>.');
 })();
 </script>
 </body>
