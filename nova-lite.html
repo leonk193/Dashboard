@@ -12,8 +12,7 @@
  *   • The viewer uses their NVIDIA NIM API key (stored only in
  *     their browser's localStorage — never sent anywhere but NIM).
  *   • Nova reads whatever the dashboard saved in localStorage for context.
- *   • Calls the NIM API directly from the browser using the
- *     `anthropic-dangerous-direct-browser-access` header (harmless for NIM).
+ *   • Calls the NIM API directly from the browser using standard HTTP headers.
  *
  * This is the lightweight version: a flat CSS orb (no 3D), basic chat.
  * The premium build (3D avatar, Spark voice scheduler, secure server
@@ -189,8 +188,6 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
         headers: {
           'content-type': 'application/json',
           'authorization': 'Bearer ' + key,
-          // Note: anthropic-dangerous-direct-browser-access is ignored by NIM but harmless
-          'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
           model: 'nvidia/nemotron-3-super-120b-a12b', // Using the Nemotron 3 Super model on NIM
@@ -204,13 +201,19 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
           stream: false
         }),
       });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
       const json = await res.json();
-      if (json.error){ loading.querySelector('div:last-child').innerHTML = render('- ' + (json.error.message || 'Something went wrong — check your API key.')); setOrb(''); busy = false; return; }
       const reply = (json.choices && json.choices[0] && json.choices[0].message?.content) || 'Hmm, no reply.';
       loading.querySelector('div:last-child').innerHTML = render(reply);
       setOrb('happy'); setTimeout(() => setOrb(''), 2500);
     } catch(e){
-      loading.querySelector('div:last-child').innerHTML = render('- Could not reach NVIDIA NIM — check your connection and API key.');
+      console.error('NIM fetch error:', e);
+      let errMsg = '- Could not reach NVIDIA NIM.';
+      if (e.message) errMsg += ' ' + e.message;
+      loading.querySelector('div:last-child').innerHTML = render(errMsg);
       setOrb('');
     }
     busy = false;
