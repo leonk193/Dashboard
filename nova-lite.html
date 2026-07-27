@@ -49,6 +49,31 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
   background: linear-gradient(90deg, var(--accent-2), var(--accent)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .title .role { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
 
+/* ===== Back to dashboard ===== */
+.fin-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px 8px 10px;
+  margin: 0 0 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.fin-back-btn:hover, .fin-back-btn:active {
+  background: rgba(255,255,255,0.07);
+  color: var(--text-primary);
+}
+.fin-back-btn svg { display: block; }
+
 /* ---- key setup ---- */
 .keybar { display: flex; gap: 8px; margin-bottom: 16px; }
 .keybar input { flex: 1; background: rgba(255,255,255,.03); border: 1px solid var(--line); color: var(--fg); border-radius: 10px; padding: 11px 13px; font-size: 13px; outline: none; }
@@ -83,6 +108,13 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
 </style>
 </head>
 <body>
+
+  <!-- ===== BACK BUTTON ===== -->
+  <a href="index.html" class="fin-back-btn" aria-label="Back to dashboard">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    <span>Back</span>
+  </a>
+
   <div class="wrap">
     <div class="top">
       <div class="orb" id="orb"></div>
