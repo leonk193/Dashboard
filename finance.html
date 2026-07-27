@@ -1758,10 +1758,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       <div style="display:flex;align-items:center;gap:6px">
         <span style="font-size:11px;color:var(--text-tertiary)">CHF</span>
         <select id="netWorthCurrency" style="background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit;cursor:pointer">
-          <option value="CHF">CHF</option>
-          <option value="USD">USD</option>
-          <option value="EUR">EUR</option>
-          <option value="GBP">GBP</option>
+        <option value="EUR">EUR</option>
+        <option value="USD">USD</option>
+        <option value="GBP">GBP</option>
+        <option value="CHF">CHF</option>
         </select>
       </div>
     </div>
@@ -1811,10 +1811,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
             <div class="rcpt-field">
               <label for="rcptCurrency">Currency</label>
               <select id="rcptCurrency">
-                <option value="CHF">CHF</option>
-                <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
                 <option value="GBP">GBP</option>
+                <option value="CHF">CHF</option>
               </select>
             </div>
             <div class="rcpt-field full">
@@ -1971,10 +1971,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       <input type="text" placeholder="Service (e.g. Netflix)" id="subName" style="flex:1.5;min-width:120px" />
       <input type="number" placeholder="Amount" id="subAmount" step="0.01" style="flex:1;max-width:100px" />
       <select id="subCurrency" style="padding:6px 10px;border:0.5px solid var(--border);border-radius:var(--radius-md);font-size:12px;font-family:inherit;background:var(--bg-card);color:var(--text-primary);max-width:90px">
-        <option value="CHF">CHF</option>
-        <option value="USD">USD</option>
         <option value="EUR">EUR</option>
+        <option value="USD">USD</option>
         <option value="GBP">GBP</option>
+        <option value="CHF">CHF</option>
       </select>
       <select id="subPeriod" style="padding:6px 10px;border:0.5px solid var(--border);border-radius:var(--radius-md);font-size:12px;font-family:inherit;background:var(--bg-card);color:var(--text-primary);max-width:100px">
         <option value="monthly">Monthly</option>
@@ -2008,10 +2008,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       <input type="text"   id="ordName"   placeholder="Item (e.g. New iPhone)" class="ord-input ord-input-name">
       <input type="number" id="ordCost"   placeholder="Cost" step="0.01" class="ord-input ord-input-cost">
       <select id="ordCurrency" class="ord-input ord-input-ccy">
-        <option value="CHF">CHF</option>
-        <option value="USD">USD</option>
         <option value="EUR">EUR</option>
+        <option value="USD">USD</option>
         <option value="GBP">GBP</option>
+        <option value="CHF">CHF</option>
       </select>
       <select id="ordFromCat" class="ord-input ord-input-from" title="Which net worth account this comes out of">
         <option value="">No accounts yet</option>
@@ -2065,10 +2065,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       <input type="text"   id="wishName"   placeholder="Item name (e.g. New iPhone Pro Max)" class="wish-input wish-input-name">
       <input type="number" id="wishAmount" placeholder="Cost" step="0.01" class="wish-input wish-input-amt">
       <select id="wishCurrency" class="wish-input wish-input-ccy">
-        <option value="CHF">CHF</option>
-        <option value="USD">USD</option>
         <option value="EUR">EUR</option>
+        <option value="USD">USD</option>
         <option value="GBP">GBP</option>
+        <option value="CHF">CHF</option>
       </select>
       <button class="wish-add-btn" id="wishAddBtn" onclick="window.__addWish && window.__addWish()">+ Add</button>
     </div>
@@ -2903,7 +2903,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     const periodOpts = ['monthly','yearly','weekly'].map(p =>
       '<option value="' + p + '"' + (p === it.period ? ' selected' : '') + '>' + p.charAt(0).toUpperCase() + p.slice(1) + '</option>'
     ).join('');
-    const ccyOpts = ['CHF','USD','EUR','GBP'].map(c =>
+    const ccyOpts = ['EUR','USD','GBP','CHF'].map(c =>
       '<option value="' + c + '"' + (c === enteredCcy ? ' selected' : '') + '>' + c + '</option>'
     ).join('');
     // Build From-account options from the live NW accounts
