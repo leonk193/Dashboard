@@ -888,6 +888,11 @@ main {
   })();
   </script>
 
+  <button class="back-btn" id="backBtn" type="button" aria-label="Go back to dashboard">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 18l-6-6 6-6"/>
+    </svg>
+  </button>
   <div class="section-title">Daily Stack</div>
 
   <div class="stack-card">
@@ -1465,6 +1470,12 @@ document.addEventListener('DOMContentLoaded', function () {
       window.dispatchEvent(new Event('storage'));
     }
   });
+});
+</script>
+
+<script>
+document.getElementById('backBtn')?.addEventListener('click', () => {
+  window.location.href = 'index.html';
 });
 </script>
 
