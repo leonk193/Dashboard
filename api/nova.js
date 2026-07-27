@@ -25,8 +25,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Parse incoming JSON body
-    const { messages = [], finance = {} } = await req.json();
+    // Prepare the body - handle both string and object cases (same pattern as nim-proxy)
+    let requestBodyString;
+    if (typeof req.body === 'string') {
+      // Already a string (e.g., if sent with Content-Type: text/plain)
+      requestBodyString = req.body;
+    } else if (req.body && typeof req.body === 'object') {
+      // Object (common when Vercel auto-parses JSON)
+      requestBodyString(requestBodyString);}
+    } else {
+      // Fallback - try to stringify whatever we got
+      requestBodyString = JSON.stringify(req.body || {});
+    }
+
+    // Parse the incoming JSON to extract messages and finance
+    let parsed = {};
+    try {
+      parsed = JSON.parse(requestBodyString);
+    } catch (e) {
+      // If cannot parse, treat as empty
+      parsed = {};
+    }
+    const { messages = [], finance = {} } = parsed;
 
     // Build system message with financial context
     const systemMessage = {
@@ -41,15 +61,14 @@ export default async function handler(req, res) {
 
     // Prepare the request body for NVIDIA NIM
     const requestBody = {
-      model: 'nvidia/nemotron-3-super-120b-a12b', // or whatever model you have access to; adjust if needed
+      model: 'nvidia/nemotron-3-super-120b-a12b', // same as other sections
       messages: finalMessages,
       temperature: 0.7,
       max_tokens: 512,
       stream: false
     };
 
-    // Forward the request to NVIDIA NIM via the proxy (or directly)
-    // We'll reuse the same logic as nim-proxy but call NIM directly.
+    // Forward the request to NVIDIA NIM
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
       headers: {
