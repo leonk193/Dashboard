@@ -1,15 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="lock.js"></script>
-<script src="/api/config"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0b">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Finances</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="sync.js" defer></script>
 <script src="topbar.js" defer></script>
 <style>
 :root {
@@ -1616,7 +1612,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       <div class="nw-chart-wrap" id="nwChartWrap">
         <div class="nw-chart-head">
           <span class="nw-chart-label">All-time</span>
-          <span class="nw-chart-delta" id="nwChartDelta">—</span>
+          <span class="nw-chart-delta" id="nwChartDelta">-</span>
         </div>
         <svg class="nw-chart-svg" id="nwChartSvg" viewBox="0 0 600 200" preserveAspectRatio="none" aria-hidden="true">
           <defs>
@@ -1640,19 +1636,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <div class="nw-chart-stats" id="nwChartStats">
           <div class="nw-stat">
             <div class="nw-stat-label">1% =</div>
-            <div class="nw-stat-val" id="nwStat1pct">—</div>
+            <div class="nw-stat-val" id="nwStat1pct">-</div>
           </div>
           <div class="nw-stat">
             <div class="nw-stat-label">All-time high</div>
-            <div class="nw-stat-val" id="nwStatHigh">—</div>
+            <div class="nw-stat-val" id="nwStatHigh">-</div>
           </div>
           <div class="nw-stat">
             <div class="nw-stat-label">All-time low</div>
-            <div class="nw-stat-val" id="nwStatLow">—</div>
+            <div class="nw-stat-val" id="nwStatLow">-</div>
           </div>
           <div class="nw-stat">
             <div class="nw-stat-label">Snapshots</div>
-            <div class="nw-stat-val" id="nwStatCount">—</div>
+            <div class="nw-stat-val" id="nwStatCount">-</div>
           </div>
         </div>
         <div class="nw-chart-empty" id="nwChartEmpty">Add or edit an asset to start tracking your net worth over time.</div>
@@ -1661,12 +1657,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       <div class="nw-donut-wrap">
         <div class="nw-chart-head">
           <span class="nw-chart-label">Allocation</span>
-          <span class="nw-chart-delta" id="nwDonutCount">—</span>
+          <span class="nw-chart-delta" id="nwDonutCount">-</span>
         </div>
         <div class="nw-donut-stage">
           <svg class="nw-donut-svg" id="nwDonutSvg" viewBox="0 0 140 140" aria-hidden="true"></svg>
           <div class="nw-donut-center">
-            <div class="nw-donut-num" id="nwDonutTotal">—</div>
+            <div class="nw-donut-num" id="nwDonutTotal">-</div>
             <div class="nw-donut-sub">total</div>
           </div>
         </div>
@@ -1679,10 +1675,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     <div class="nw-activity" id="nwActivity">
       <div class="nw-activity-h">
         <span class="nw-chart-label">Recent activity</span>
-        <span class="nw-chart-delta" id="nwActivityCount">—</span>
+        <span class="nw-chart-delta" id="nwActivityCount">-</span>
       </div>
       <div class="nw-activity-list" id="nwActivityList"></div>
-      <div class="nw-activity-empty" id="nwActivityEmpty">No activity yet — add your first account.</div>
+      <div class="nw-activity-empty" id="nwActivityEmpty">No activity yet. Add your first account.</div>
     </div>
 
     <div class="card-grid" style="gap:10px">
@@ -1798,7 +1794,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       <label class="date-field ord-input-date" title="Expected arrival"><span class="date-emoji" aria-hidden="true">📅</span><input type="date" id="ordArrival" /></label>
       <button class="ord-add-btn" id="ordAddBtn" onclick="window.__addOrder && window.__addOrder()">+ Add Order</button>
     </div>
-    <div class="ord-add-preview" id="ordAddPreview">Type a cost — preview will show what % of net worth it takes.</div>
+    <div class="ord-add-preview" id="ordAddPreview">Type a cost. Preview will show what % of net worth it takes.</div>
   </div>
 
   <!-- Items list -->
@@ -1828,7 +1824,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       </div>
       <div class="wish-hero-pct-wrap">
         <div class="wish-hero-pct-label">% OF NET WORTH</div>
-        <div class="wish-hero-pct-num" id="wishPctOfNwHero">—</div>
+        <div class="wish-hero-pct-num" id="wishPctOfNwHero">-</div>
       </div>
     </div>
     <div class="wish-hero-bar">
@@ -1862,7 +1858,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   <div class="wish-empty-card" id="wishEmpty">
     <div class="wish-empty-icon">🎯</div>
     <div class="wish-empty-title">No wishes yet</div>
-    <div class="wish-empty-sub">Add anything you're saving for — the dashboard will calculate what % of your net worth it'd cost.</div>
+    <div class="wish-empty-sub">Add anything you're saving for. The dashboard will calculate what % of your net worth it'd cost.</div>
   </div>
 </div>
 
@@ -2134,7 +2130,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     if (!arr.length) {
       list.classList.add('hidden');
       empty.classList.remove('hidden');
-      count.textContent = '—';
+      count.textContent = '-';
       return;
     }
     list.classList.remove('hidden');
@@ -2142,7 +2138,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     count.textContent = arr.length + ' event' + (arr.length === 1 ? '' : 's');
     list.innerHTML = arr.slice(0, 30).map(e => {
       const meta = NW_SLICE_META[e.cat] || { name: e.cat, color: '#FFFFFF' };
-      const sign = e.delta >= 0 ? '+' : '—';
+      const sign = e.delta >= 0 ? '+' : '-';
       const cls = e.delta >= 0 ? 'up' : 'down';
       const amt = fmtMoney(Math.abs(e.delta));
       const kind = e.kind === 'edit' ? 'EDIT' : (e.kind === 'delete' ? 'DELETE' : 'ADD');
@@ -2227,10 +2223,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     if (!slices.length || sliceTotal <= 0) {
       svg.innerHTML = '<circle cx="70" cy="70" r="60" fill="rgba(255,255,255,0.025)"/>'
                     + '<circle cx="70" cy="70" r="44" fill="#0A0A0B"/>';
-      total.textContent = '—';
+      total.textContent = '-';
       empty.classList.remove('hidden');
       legend.innerHTML = '';
-      count.textContent = '—';
+      count.textContent = '-';
       return;
     }
     empty.classList.add('hidden');
@@ -2304,7 +2300,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       wrap.classList.remove('has-data');
       linePath.setAttribute('d', '');
       areaPath.setAttribute('d', '');
-      if (deltaEl) { deltaEl.textContent = '—'; deltaEl.classList.remove('up', 'down'); }
+      if (deltaEl) { deltaEl.textContent = '-'; deltaEl.classList.remove('up', 'down'); }
       renderChartStats([]);
       return;
     }
@@ -2324,11 +2320,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       } else if (Math.abs(first) < 0.5) {
         // Baseline was effectively zero — % would be infinite. Show the
         // absolute amount instead so "added 1,276" reads clearly.
-        const sign = change > 0 ? '+' : '—';
+        const sign = change > 0 ? '+' : '-';
         deltaEl.textContent = sign + fmtMoney(Math.abs(change));
       } else {
         const pct = (change / Math.abs(first)) * 100;
-        const sign = change > 0 ? '+' : '—';
+        const sign = change > 0 ? '+' : '-';
         const absPct = Math.abs(pct);
         const pctStr = absPct >= 100 ? absPct.toFixed(0) : absPct >= 10 ? absPct.toFixed(1) : absPct.toFixed(2);
         deltaEl.textContent = sign + pctStr + '%';
@@ -2367,9 +2363,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     const countEl = document.getElementById('nwStatCount');
     if (!oneEl) return;
     if (!hist || !hist.length) {
-      oneEl.textContent = '—';
-      highEl.textContent = '—';
-      lowEl.textContent = '—';
+      oneEl.textContent = '-';
+      highEl.textContent = '-';
+      lowEl.textContent = '-';
       countEl.textContent = '0';
       return;
     }
@@ -2696,7 +2692,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         if (ix > 0) { newFromCat = newFromVal.slice(0, ix); newFromAccount = newFromVal.slice(ix + 2); }
       }
       if (newAuto && (!newFromCat || !newFromAccount)) {
-        alert('Pick a "From account" — auto-deduct needs somewhere to take the money from.');
+        alert('Pick a "From account". Auto-deduct needs somewhere to take the money from.');
         return;
       }
       if (!newName || isNaN(newAmtRaw)) return;
@@ -2741,7 +2737,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       const autoDeduct = !!(tEl && tEl.checked);
       // Guard: auto-deduct requires a linked account
       if (autoDeduct && (!fromCat || !fromAccount)) {
-        alert('Pick a "From account" first — auto-deduct needs to know where to take the money from.');
+        alert('Pick a "From account" first. Auto-deduct needs to know where to take the money from.');
         return;
       }
       const items = storeGet('subs') || [];
@@ -2816,7 +2812,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       if (heroFill) heroFill.style.width = Math.min(100, pct) + '%';
       if (wishPctEl) wishPctEl.textContent = 'Your wishlist is ' + pct.toFixed(2) + '% of your ' + fmtMoney(grand) + ' net worth';
     } else {
-      if (heroPctEl) { heroPctEl.textContent = '—'; heroPctEl.className = 'wish-hero-pct-num'; }
+      if (heroPctEl) { heroPctEl.textContent = '-'; heroPctEl.className = 'wish-hero-pct-num'; }
       if (heroFill) heroFill.style.width = '0%';
       if (wishPctEl) wishPctEl.textContent = 'Add accounts in Net Worth first to see this as a %';
     }
@@ -2832,7 +2828,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       const cost = Number(it.amount) || 0;
       const pct = grand > 0 ? (cost / grand) * 100 : null;
       const cls = pct == null ? 'flat' : pctClass(pct);
-      const pctText = pct == null ? '—' : pct.toFixed(2) + '%';
+      const pctText = pct == null ? '-' : pct.toFixed(2) + '%';
       const fillPct = Math.min(100, pct == null ? 0 : pct);
       const monthsToSave = (grand > 0 && cost > 0) ? Math.ceil(cost / Math.max(1, grand * 0.05)) : null; // rough: if you saved 5%/mo
       const row = document.createElement('div');
@@ -3016,7 +3012,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         pctCls = ordPctClass(pct);
       } else {
         pct = null;
-        pctText = '— of NW';
+        pctText = '- of NW';
         pctCls = '';
       }
       const fromMeta = ORD_FROM_META[o.fromCat] || ORD_FROM_META.bank;
@@ -3107,7 +3103,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     chooser.querySelectorAll('.ord-deduct-opt').forEach(b => {
       b.addEventListener('click', () => {
         if (b.dataset.insuf === '1') {
-          if (!confirm('That account doesn\'t have enough — deduct anyway? (it will go negative)')) return;
+          if (!confirm('That account doesn\'t have enough. Deduct anyway? (it will go negative)')) return;
         }
         confirmDeduct(orderId, b.dataset.cat, b.dataset.name);
       });
@@ -3179,7 +3175,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     if (!prev) return;
     const aRaw = parseFloat(costEl && costEl.value);
     if (!costEl || isNaN(aRaw) || aRaw <= 0) {
-      prev.textContent = 'Type a cost — preview will show what % of net worth it takes.';
+      prev.textContent = 'Type a cost. Preview will show what % of net worth it takes.';
       prev.className = 'ord-add-preview';
       return;
     }
@@ -3378,20 +3374,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   setInterval(safeRenderTicker, 1500);
 
 })();
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  if (typeof initCloudSync !== 'function') return;
-  initCloudSync({
-    appKey: 'finance',
-    syncedKeys: ['subs', 'wishlist', 'incoming_orders', 'nw_currency', 'nw:activity', 'nw:history'],
-    syncedPrefixes: ['nw:'],
-    onApplied: function () {
-      window.dispatchEvent(new Event('storage'));
-    }
-  });
-});
 </script>
 
 </body>
