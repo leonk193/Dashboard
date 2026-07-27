@@ -1,6 +1,7 @@
 // ============================================================
 // POST /api/nova
 // Nova money coach endpoint: proxies to NVIDIA NIM with financial context.
+// Returns { text: "response content" } to match frontend expectations.
 // ============================================================
 export default async function handler(req, res) {
   // Enable CORS for all origins (adjust as needed for security)
@@ -79,34 +80,42 @@ export default async function handler(req, res) {
     });
 
     // Get the response data - handle both JSON and non-JSON responses safely
-    let data;
+    let nimResponse;
     const contentType = response.headers.get('content-type') || '';
 
     try {
       // Try to parse as JSON regardless of content type
       const text = await response.text();
       try {
-        data = JSON.parse(text);
+        nimResponse = JSON.parse(text);
       } catch (jsonError) {
         // If not JSON, create an error object
-        data = {
+        return res.status(500).json({
           error: 'Invalid JSON response from NVIDIA NIM',
           details: text.substring(0, 200) + (text.length > 200 ? '...' : ''),
           receivedContentType: contentType,
           statusCode: response.status
-        };
+        });
       }
     } catch (textError) {
       // If we can't even read the response as text
-      data = {
+      return res.status(500).json({
         error: 'Unable to read response from NVIDIA NIM',
         details: textError.message,
         statusCode: response.status
-      };
+      });
     }
 
-    // Return the response with the same status code
-    return res.status(response.status).json(data);
+    // Extract the text content from NIM response format
+    // NIM returns: { choices: [{ message: { content: "actual response" } }] }
+    const replyText = (nimResponse.choices &&
+                      nimResponse.choices[0] &&
+                      nimResponse.choices[0].message &&
+                      nimResponse.choices[0].message.content) ||
+                     '(no response)';
+
+    // Return in the format expected by the frontend: { text: "response content" }
+    return res.status(200).json({ text: replyText.trim() });
   } catch (error) {
     console.error('Nova Error:', error);
     return res.status(500).json({
