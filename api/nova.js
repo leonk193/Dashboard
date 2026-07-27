@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       requestBodyString = req.body;
     } else if (req.body && typeof req.body === 'object') {
       // Object (common when Vercel auto-parses JSON)
-      requestBodyString(requestBodyString);}
+      requestBodyString = JSON.stringify(req.body);
     } else {
       // Fallback - try to stringify whatever we got
       requestBodyString = JSON.stringify(req.body || {});
