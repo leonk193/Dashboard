@@ -67,6 +67,31 @@ body::after {
   margin: 0 auto;
 }
 
+/* ===== Back to dashboard ===== */
+.fin-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px 8px 10px;
+  margin: 0 0 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.fin-back-btn:hover, .fin-back-btn:active {
+  background: rgba(255,255,255,0.07);
+  color: var(--text-primary);
+}
+.fin-back-btn svg { display: block; }
+
 /* ===== Component 1: page title ===== */
 .dash-title {
   margin: 0 0 14px;
@@ -78,6 +103,8 @@ body::after {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+  display: flex;
+  justify-content: center;
 }
 @media (max-width: 480px) { .dash-title { font-size: 22px; } }
 
@@ -599,8 +626,13 @@ body::after {
 </head>
 <body>
 <div class="page">
+  <!-- ===== BACK BUTTON ===== -->
+  <a href="index.html" class="fin-back-btn" aria-label="Back to dashboard">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    <span>Back</span>
+  </a>
 
-  <h1 class="dash-title">Leon Dashboard</h1>
+  <h1 class="dash-title">Main</h1>
 
   <div class="ticker-row">
     <div class="goal-ticker" id="goalTicker" aria-live="polite" aria-atomic="true">
