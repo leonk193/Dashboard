@@ -169,6 +169,7 @@ body::after {
   font-size: 13.5px; line-height: 1.5;
   white-space: pre-wrap; overflow-wrap: anywhere;
 }
+.nova-msg b { color: var(--accent); font-weight: 700; }
 .nova-msg-user {
   align-self: flex-end;
   background: rgba(255,255,255,0.10);
@@ -3657,10 +3658,34 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       };
     }
 
+    function escapeHtml(text) {
+      const map = {
+        '&': '&',
+        '<': '<',
+        '>': '>',
+        '"': '"',
+        "'": '&#039;'
+      };
+      return String(text).replace(/[&<>"']/g, m => map[m]);
+    }
+
+    function inlineMarks(s){ return escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'); }
+    function renderNova(text){
+      const lines = String(text).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const items = [], loose = [];
+      for (const l of lines){
+        if (/^[-•*]\s+/.test(l)) items.push('<li>' + inlineMarks(l.replace(/^[-•*]\s+/, '')) + '</li>');
+        else loose.push(inlineMarks(l));
+      }
+      let html = loose.join('<br>');
+      if (items.length) html += (html ? '<br>' : '') + '<ul class="reply-list">' + items.join('') + '</ul>';
+      return html;
+    }
+
     function addBubble(role, text) {
       const el = document.createElement('div');
       el.className = 'nova-msg nova-msg-' + role;
-      el.textContent = text;
+      el.innerHTML = '<div class="nova-msg-bubble">' + renderNova(text) + '</div>';
       messagesEl.appendChild(el);
       messagesEl.scrollTop = messagesEl.scrollHeight;
       return el;
