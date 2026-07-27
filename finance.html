@@ -3717,7 +3717,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
           pending.textContent = '⚠ ' + ((data && data.error) || 'Something went wrong.');
         } else {
           const reply = (data.text || '').trim() || '(no response)';
-          pending.textContent = reply;
+          const bubbleDiv = pending.querySelector('.nova-msg-bubble');
+          if (bubbleDiv) {
+            bubbleDiv.innerHTML = renderNova(reply);
+          } else {
+            pending.innerHTML = '<div class="nova-msg-bubble">' + renderNova(reply) + '</div>';
+          }
           convo.push({ role: 'assistant', content: reply });
         }
       } catch (e) {
