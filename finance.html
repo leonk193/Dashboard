@@ -3938,7 +3938,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
       busyThumb.src = img.dataUrl;
       show(busyEl);
       try {
-        const r = await fetch('/api/receipt', {
+        const r = await fetch('/api/nim-vision-proxy', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ image: img.base64, mediaType: img.mediaType })
