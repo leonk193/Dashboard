@@ -8,211 +8,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="sync.js" defer></script>
     <script src="topbar.js" defer></script>
-<style>
-    :root {
-        --text-primary: #FAFAFA;
-        --text-secondary: #B8B6B0;
-        --text-tertiary: #76746E;
-        --success: #6BE3A4;
-        --warning: #F2C063;
-        --danger: #FF6B6B;
-        --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    }
-    * { box-sizing: border-box; }
-    html, body {
-        margin: 0; padding: 0;
-        background: #050506;
-        color: var(--text-secondary);
-        font-family: var(--font);
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
-    body {
-        min-height: 100vh; position: relative; overflow-x: hidden;
-        padding: max(28px, env(safe-area-inset-top)) 20px 60px;
-    }
-    .page { max-width: 1100px; margin: 0 auto; }
-    .dash-title {
-        margin: 0 0 18px; font-size: 28px; font-weight: 700; letter-spacing: -0.025em;
-        background: linear-gradient(180deg, #FFFFFF 0%, #C7C4BC 120%);
-        -webkit-background-clip: text; background-clip: text;
-        -webkit-text-fill-color: transparent; color: transparent;
-    }
-    @media (max-width: 480px) { .dash-title { font-size: 22px; } }
-
-    /* Tab Styles */
-    .tab-container { display: flex; flex-direction: column; gap: 24px; }
-    .tab-header {
-        display: flex;
-        background: rgba(255,255,255,0.04);
-        border-radius: 16px;
-        overflow: hidden;
-    }
-    .tab-button {
-        flex: 1;
-        padding: 16px 20px;
-        font-size: 16px;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        text-align: center;
-        color: var(--text-secondary);
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        position: relative;
-    }
-    .tab-button.active {
-        color: var(--text-primary);
-        background: rgba(255,255,255,0.08);
-    }
-    .tab-button.active::after {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, var(--success), var(--warning));
-    }
-    .tab-content {
-        display: none;
-        animation: fadeIn 0.3s ease;
-    }
-    .tab-content.active {
-        display: block;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Meal Form Styles */
-    .meal-form {
-        background: rgba(255,255,255,0.04);
-        border-radius: 18px;
-        padding: 20px;
-        backdrop-filter: blur(24px) saturate(1.2);
-        -webkit-backdrop-filter: blur(24px) saturate(1.2);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.45);
-    }
-    .form-section { margin-bottom: 24px; }
-    .form-section-title {
-        font-size: 14px;
-        font-weight: 700;
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        color: var(--text-tertiary);
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .form-section-title::before {
-        content: "";
-        width: 18px;
-        height: 1px;
-        background: var(--text-tertiary);
-        opacity: 0.6;
-    }
-    .form-field { margin-bottom: 16px; }
-    .field-label {
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.10em;
-        text-transform: uppercase;
-        color: var(--text-tertiary);
-        margin-bottom: 6px;
-    }
-    .input-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-    }
-    .input-control {
-        flex: 1;
-        min-width: 120px;
-        display: flex;
-        flex-direction: column;
-    }
-    input, select, textarea {
-        padding: 12px 16px;
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 12px;
-        background: rgba(0,0,0,0.28);
-        color: var(--text-primary);
-        font-family: inherit;
-        font-size: 14px;
-        outline: none;
-        transition: border-color 0.2s, background 0.2s;
-    }
-    input:focus, select:focus, textarea:focus {
-        border-color: rgba(255,255,255,0.28);
-        background: rgba(0,0,0,0.36);
-    }
-    input::placeholder {
-        color: var(--text-tertiary);
-    }
-    .textarea-control {
-        min-height: 80px;
-        resize: vertical;
-    }
-    .photo-upload {
-        aspect-ratio: 16/9;
-        background: rgba(255,255,255,0.03);
-        border: 2px dashed rgba(255,255,255,0.12);
-        border-radius: 12px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    .photo-upload:hover {
-        background: rgba(255,255,255,0.05);
-        border-color: rgba(255,255,255,0.16);
-    }
-    .photo-upload-icon {
-        font-size: 24px;
-        color: var(--text-secondary);
-        margin-bottom: 8px;
-    }
-    .photo-upload-text {
-        font-size: 14px;
-        color: var(--text-secondary);
-        text-align: center;
-    }
-    .submit-btn {
-        width: 100%;
-        padding: 16px;
-        border: none;
-        border-radius: 12px;
-        font-size: 16px;
-        font-weight: 700;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
-        color: #0A0A0B;
-        background: linear-gradient(180deg, #FFFFFF 0%, #E8E5DD 100%);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.35), 0 8px 22px rgba(0,0,0,0.25);
-        cursor: pointer;
-        transition: transform 0.1s ease, filter 0.15s ease;
-    }
-    .submit-btn:hover {
-        filter: brightness(1.05);
-        transform: translateY(-1px);
-    }
-    .submit-btn:active {
-        transform: translateY(0);
-    }
-    .form-status {
-        min-height: 16px;
-        margin-top: 8px;
-        font-size: 12px;
-        text-align: center;
-    }
-</style>
 </head>
 <body>
     <div class="page">
@@ -221,7 +16,7 @@
             <button class="gear-btn" id="settingsOpen" type="button" aria-label="Settings">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="3"/>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
             </button>
         </div>
@@ -298,7 +93,76 @@
             </div>
 
             <div class="tab-content" id="summary-tab">
-                <!-- Daily Summary content -->
+                <div class="summary-grid">
+                    <div class="progress-ring-container">
+                        <div class="progress-ring" id="caloriesRing">
+                            <svg viewBox="0 0 120 120">
+                                <circle class="progress-ring-track" cx="60" cy="60" r="52" />
+                                <circle class="progress-ring-fill" cx="60" cy="60" r="52" id="caloriesFill" />
+                            </svg>
+                            <div class="progress-ring-percent" id="caloriesPercent">0%</div>
+                            <div class="progress-ring-label">Calories</div>
+                            <div class="progress-ring-subtext" id="caloriesSubtext">0 / 2000 kcal</div>
+                        </div>
+                    </div>
+
+                    <div class="progress-ring-container">
+                        <div class="progress-ring" id="proteinRing">
+                            <svg viewBox="0 0 120 120">
+                                <circle class="progress-ring-track" cx="60" cy="60" r="52" />
+                                <circle class="progress-ring-fill" cx="60" cy="60" r="52" id="proteinFill" />
+                            </svg>
+                            <div class="progress-ring-percent" id="proteinPercent">0%</div>
+                            <div class="progress-ring-label">Protein</div>
+                            <div class="progress-ring-subtext" id="proteinSubtext">0 / 150 g</div>
+                        </div>
+                    </div>
+
+                    <div class="progress-ring-container">
+                        <div class="progress-ring" id="carbsRing">
+                            <svg viewBox="0 0 120 120">
+                                <circle class="progress-ring-track" cx="60" cy="60" r="52" />
+                                <circle class="progress-ring-fill" cx="60" cy="60" r="52" id="carbsFill" />
+                            </svg>
+                            <div class="progress-ring-percent" id="carbsPercent">0%</div>
+                            <div class="progress-ring-label">Carbs</div>
+                            <div class="progress-ring-subtext" id="carbsSubtext">0 / 250 g</div>
+                        </div>
+                    </div>
+
+                    <div class="progress-ring-container">
+                        <div class="progress-ring" id="fatRing">
+                            <svg viewBox="0 0 120 120">
+                                <circle class="progress-ring-track" cx="60" cy="60" r="52" />
+                                <circle class="progress-ring-fill" cx="60" cy="60" r="52" id="fatFill" />
+                            </svg>
+                            <div class="progress-ring-percent" id="fatPercent">0%</div>
+                            <div class="progress-ring-label">Fat</div>
+                            <div class="progress-ring-subtext" id="fatSubtext">0 / 70 g</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="daily-total">
+                    <div class="daily-total-label">Total Calories Consumed</div>
+                    <div class="daily-total-value" id="dailyTotalValue">0</div>
+                    <div class="daily-total-unit">kcal</div>
+                </div>
+
+                <div class="macro-breakdown">
+                    <div class="macro-item">
+                        <span class="macro-label">Protein</span>
+                        <span class="macro-value" id="dailyProtein">0</span>g
+                    </div>
+                    <div class="macro-item">
+                        <span class="macro-label">Carbs</span>
+                        <span class="macro-value" id="dailyCarbs">0</span>g
+                    </div>
+                    <div class="macro-item">
+                        <span class="macro-label">Fat</span>
+                        <span class="macro-value" id="dailyFat">0</span>g
+                    </div>
+                </div>
             </div>
 
             <div class="tab-content" id="history-tab">
