@@ -8,6 +8,211 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="sync.js" defer></script>
     <script src="topbar.js" defer></script>
+<style>
+    :root {
+        --text-primary: #FAFAFA;
+        --text-secondary: #B8B6B0;
+        --text-tertiary: #76746E;
+        --success: #6BE3A4;
+        --warning: #F2C063;
+        --danger: #FF6B6B;
+        --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+        margin: 0; padding: 0;
+        background: #050506;
+        color: var(--text-secondary);
+        font-family: var(--font);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    body {
+        min-height: 100vh; position: relative; overflow-x: hidden;
+        padding: max(28px, env(safe-area-inset-top)) 20px 60px;
+    }
+    .page { max-width: 1100px; margin: 0 auto; }
+    .dash-title {
+        margin: 0 0 18px; font-size: 28px; font-weight: 700; letter-spacing: -0.025em;
+        background: linear-gradient(180deg, #FFFFFF 0%, #C7C4BC 120%);
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent; color: transparent;
+    }
+    @media (max-width: 480px) { .dash-title { font-size: 22px; } }
+
+    /* Tab Styles */
+    .tab-container { display: flex; flex-direction: column; gap: 24px; }
+    .tab-header {
+        display: flex;
+        background: rgba(255,255,255,0.04);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .tab-button {
+        flex: 1;
+        padding: 16px 20px;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        text-align: center;
+        color: var(--text-secondary);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    .tab-button.active {
+        color: var(--text-primary);
+        background: rgba(255,255,255,0.08);
+    }
+    .tab-button.active::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--success), var(--warning));
+    }
+    .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Meal Form Styles */
+    .meal-form {
+        background: rgba(255,255,255,0.04);
+        border-radius: 18px;
+        padding: 20px;
+        backdrop-filter: blur(24px) saturate(1.2);
+        -webkit-backdrop-filter: blur(24px) saturate(1.2);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    }
+    .form-section { margin-bottom: 24px; }
+    .form-section-title {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .form-section-title::before {
+        content: "";
+        width: 18px;
+        height: 1px;
+        background: var(--text-tertiary);
+        opacity: 0.6;
+    }
+    .form-field { margin-bottom: 16px; }
+    .field-label {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.10em;
+        text-transform: uppercase;
+        color: var(--text-tertiary);
+        margin-bottom: 6px;
+    }
+    .input-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .input-control {
+        flex: 1;
+        min-width: 120px;
+        display: flex;
+        flex-direction: column;
+    }
+    input, select, textarea {
+        padding: 12px 16px;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        background: rgba(0,0,0,0.28);
+        color: var(--text-primary);
+        font-family: inherit;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s, background 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+        border-color: rgba(255,255,255,0.28);
+        background: rgba(0,0,0,0.36);
+    }
+    input::placeholder {
+        color: var(--text-tertiary);
+    }
+    .textarea-control {
+        min-height: 80px;
+        resize: vertical;
+    }
+    .photo-upload {
+        aspect-ratio: 16/9;
+        background: rgba(255,255,255,0.03);
+        border: 2px dashed rgba(255,255,255,0.12);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .photo-upload:hover {
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.16);
+    }
+    .photo-upload-icon {
+        font-size: 24px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+    }
+    .photo-upload-text {
+        font-size: 14px;
+        color: var(--text-secondary);
+        text-align: center;
+    }
+    .submit-btn {
+        width: 100%;
+        padding: 16px;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: #0A0A0B;
+        background: linear-gradient(180deg, #FFFFFF 0%, #E8E5DD 100%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.35), 0 8px 22px rgba(0,0,0,0.25);
+        cursor: pointer;
+        transition: transform 0.1s ease, filter 0.15s ease;
+    }
+    .submit-btn:hover {
+        filter: brightness(1.05);
+        transform: translateY(-1px);
+    }
+    .submit-btn:active {
+        transform: translateY(0);
+    }
+    .form-status {
+        min-height: 16px;
+        margin-top: 8px;
+        font-size: 12px;
+        text-align: center;
+    }
+</style>
 </head>
 <body>
     <div class="page">
@@ -31,7 +236,65 @@
 
             <!-- Tab Content -->
             <div class="tab-content active" id="log-tab">
-                <!-- Log Meal content -->
+                <div class="meal-form">
+                    <form id="mealForm">
+                        <div class="form-section">
+                            <h2 class="form-section-title">Meal Details</h2>
+                            <div class="form-field">
+                                <label class="field-label">Meal Name</label>
+                                <input type="text" id="mealName" placeholder="e.g., Chicken Salad, Protein Shake" autocomplete="off">
+                            </div>
+                            <div class="form-field">
+                                <label class="field-label">Time</label>
+                                <input type="time" id="mealTime">
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h2 class="form-section-title">Nutrition</h2>
+                            <div class="input-group">
+                                <div class="input-control">
+                                    <label class="field-label">Calories</label>
+                                    <input type="number" id="mealCalories" min="0" placeholder="0">
+                                </div>
+                                <div class="input-control">
+                                    <label class="field-label">Protein (g)</label>
+                                    <input type="number" id="mealProtein" min="0" step="0.1" placeholder="0">
+                                </div>
+                                <div class="input-control">
+                                    <label class="field-label">Carbs (g)</label>
+                                    <input type="number" id="mealCarbs" min="0" step="0.1" placeholder="0">
+                                </div>
+                                <div class="input-control">
+                                    <label class="field-label">Fat (g)</label>
+                                    <input type="number" id="mealFat" min="0" step="0.1" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h2 class="form-section-title">Photo (Optional)</h2>
+                            <div class="form-field">
+                                <div class="photo-upload" id="photoUpload">
+                                    <div class="photo-upload-icon">📸</div>
+                                    <div class="photo-upload-text">Tap to upload or drag & drop</div>
+                                    <input type="file" id="mealPhoto" accept="image/*" style="display: none;">
+                                </div>
+                                <p style="font-size: 12px; color: var(--text-tertiary); margin-top: 8px;">Supported formats: JPG, PNG (Max 5MB)</p>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h2 class="form-section-title">Notes (Optional)</h2>
+                            <div class="form-field">
+                                <textarea id="mealNotes" class="textarea-control" placeholder="How did you feel? Ingredients, preparation notes..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-status" id="formStatus"></div>
+                        <button type="submit" class="submit-btn">Log Meal</button>
+                    </form>
+                </div>
             </div>
 
             <div class="tab-content" id="summary-tab">
