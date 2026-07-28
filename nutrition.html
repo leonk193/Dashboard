@@ -13,11 +13,24 @@
             --text-primary: #FAFAFA;
             --text-secondary: #B8B6B0;
             --text-tertiary: #76746E;
-            --success: #6BE3A4;
-            --warning: #F2C063;
+            --success: #4ECDC4;
+            --warning: #FFE66D;
             --danger: #FF6B6B;
+            --info: #45B7D1;
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-success: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+            --gradient-warning: linear-gradient(135deg, #FFE66D 0%, #FFEAA7 100%);
+            --gradient-danger: linear-gradient(135deg, #FF6B67 0%, #FF5252 100%);
             --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.15);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.2);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         * { box-sizing: border-box; }
         html, body {
@@ -63,6 +76,8 @@
             background: rgba(255,255,255,0.04);
             border-radius: 16px;
             overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
         }
         .tab-button {
             flex: 1;
@@ -75,12 +90,20 @@
             background: transparent;
             border: none;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
             position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        .tab-button:hover {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.08);
+            transform: translateY(-2px);
         }
         .tab-button.active {
             color: var(--text-primary);
-            background: rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.12);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         .tab-button.active::after {
             content: "";
@@ -88,12 +111,19 @@
             bottom: 0;
             left: 0;
             right: 0;
-            height: 3px;
+            height: 4px;
             background: linear-gradient(90deg, var(--success), var(--warning));
+            border-radius: 2px 2px 0 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .tab-button:not(.active):hover {
+            background: rgba(255,255,255,0.06);
+            color: var(--text-primary);
         }
         .tab-content {
             display: none;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.4s ease;
+            backdrop-filter: blur(10px);
         }
         .tab-content.active {
             display: block;
@@ -105,148 +135,194 @@
 
         /* Meal Form Styles */
         .meal-form {
-            background: rgba(255,255,255,0.04);
-            border-radius: 18px;
-            padding: 20px;
-            backdrop-filter: blur(24px) saturate(1.2);
-            -webkit-backdrop-filter: blur(24px) saturate(1.2);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            padding: 24px;
+            backdrop-filter: blur(20px) saturate(1.2);
+            -webkit-backdrop-filter: blur(20px) saturate(1.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.08);
         }
-        .form-section { margin-bottom: 24px; }
+        .form-section { margin-bottom: 28px; }
         .form-section-title {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 700;
-            letter-spacing: 0.18em;
+            letter-spacing: 0.2em;
             text-transform: uppercase;
-            color: var(--text-tertiary);
-            margin-bottom: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            position: relative;
         }
         .form-section-title::before {
             content: "";
-            width: 18px;
-            height: 1px;
-            background: var(--text-tertiary);
-            opacity: 0.6;
+            width: 24px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--success), var(--warning));
+            border-radius: 2px;
         }
-        .form-field { margin-bottom: 16px; }
+        .form-field { margin-bottom: 20px; }
         .field-label {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
-            letter-spacing: 0.10em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
             color: var(--text-tertiary);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+            display: block;
         }
         .input-group {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 16px;
+            margin-bottom: 8px;
         }
         .input-control {
             flex: 1;
-            min-width: 120px;
+            min-width: 100px;
             display: flex;
             flex-direction: column;
         }
         input, select, textarea {
-            padding: 12px 16px;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            background: rgba(0,0,0,0.28);
+            padding: 14px 18px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            background: rgba(0,0,0,0.2);
             color: var(--text-primary);
             font-family: inherit;
-            font-size: 14px;
+            font-size: 15px;
             outline: none;
-            transition: border-color 0.2s, background 0.2s;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
         }
         input:focus, select:focus, textarea:focus {
-            border-color: rgba(255,255,255,0.28);
-            background: rgba(0,0,0,0.36);
+            border-color: rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.25);
+            box-shadow: 0 0 0 3px rgba(107, 227, 164, 0.2);
         }
         input::placeholder {
             color: var(--text-tertiary);
+            opacity: 0.7;
         }
         .textarea-control {
-            min-height: 80px;
+            min-height: 90px;
             resize: vertical;
         }
         .photo-upload {
             aspect-ratio: 16/9;
-            background: rgba(255,255,255,0.03);
-            border: 2px dashed rgba(255,255,255,0.12);
-            border-radius: 12px;
+            background: rgba(255,255,255,0.02);
+            border: 2px dashed rgba(255,255,255,0.1);
+            border-radius: 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
         }
         .photo-upload:hover {
-            background: rgba(255,255,255,0.05);
-            border-color: rgba(255,255,255,0.16);
+            background: rgba(255,255,255,0.04);
+            border-color: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
         }
         .photo-upload-icon {
-            font-size: 24px;
+            font-size: 28px;
             color: var(--text-secondary);
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         .photo-upload-text {
-            font-size: 14px;
+            font-size: 15px;
             color: var(--text-secondary);
             text-align: center;
+            font-weight: 500;
         }
         .submit-btn {
             width: 100%;
             padding: 16px;
             border: none;
-            border-radius: 12px;
-            font-size: 16px;
+            border-radius: 14px;
+            font-size: 17px;
             font-weight: 700;
-            letter-spacing: 0.02em;
+            letter-spacing: 0.03em;
             text-transform: uppercase;
             color: #0A0A0B;
-            background: linear-gradient(180deg, #FFFFFF 0%, #E8E5DD 100%);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.35), 0 8px 22px rgba(0,0,0,0.25);
+            background: linear-gradient(180deg, #FFFFFF 0%, #F8F5EE 100%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 4px 12px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15);
             cursor: pointer;
-            transition: transform 0.1s ease, filter 0.15s ease;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
         .submit-btn:hover {
-            filter: brightness(1.05);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 6px 16px rgba(0,0,0,0.3), 0 12px 28px rgba(0,0,0,0.2);
+            background: linear-gradient(180deg, #F8F5EE 0%, #FFFFFF 100%);
         }
         .submit-btn:active {
             transform: translateY(0);
         }
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .submit-btn:hover::before {
+            left: 100%;
+        }
         .form-status {
-            min-height: 16px;
-            margin-top: 8px;
-            font-size: 12px;
+            min-height: 20px;
+            margin-top: 12px;
+            font-size: 13px;
             text-align: center;
+            transition: opacity 0.3s ease;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+        .form-status.error {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            color: #ff6b6b;
+        }
+        .form-status.success {
+            background: rgba(78, 205, 196, 0.2);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            color: #4ecdc4;
         }
 
         /* Summary Tab Styles */
         .summary-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 24px;
+            margin-bottom: 28px;
         }
 
         .progress-ring-container {
-            background: rgba(255,255,255,0.04);
-            border-radius: 18px;
-            padding: 20px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            padding: 24px;
             text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+        .progress-ring-container:hover {
+            background: rgba(255,255,255,0.04);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
         }
 
         .progress-ring {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 16px;
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 20px;
             position: relative;
         }
 
@@ -258,18 +334,17 @@
 
         .progress-ring-track {
             fill: none;
-            stroke: rgba(255,255,255,0.06);
-            stroke-width: 8;
+            stroke: rgba(255,255,255,0.08);
+            stroke-width: 12;
         }
 
         .progress-ring-fill {
             fill: none;
-            stroke-width: 8;
+            stroke-width: 12;
             stroke-linecap: round;
             transform: rotate(-90deg);
-            transform-origin: 60px 60px;
-            transition: stroke 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-                       stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+            transform-origin: 70px 70px;
+            transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         .progress-ring-percent {
@@ -277,24 +352,27 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 800;
             font-variant-numeric: tabular-nums;
             line-height: 1;
             color: var(--text-primary);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
         .progress-ring-label {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             color: var(--text-primary);
-            margin-top: 4px;
+            margin-top: 8px;
+            letter-spacing: -0.02em;
         }
 
         .progress-ring-subtext {
-            font-size: 12px;
+            font-size: 14px;
             color: var(--text-tertiary);
-            margin-top: 4px;
+            margin-top: 6px;
+            font-weight: 500;
         }
 
         .progress-ring.goal-met .progress-ring-fill {
@@ -305,62 +383,107 @@
             stroke: linear-gradient(90deg, var(--success), var(--warning));
         }
 
+        /* Animated progress glow */
+        .progress-ring.goal-met .progress-ring-fill {
+            animation: pulse 2s infinite;
+        }
+        .progress-ring.goal-exceeded .progress-ring-fill {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { filter: drop-shadow(0 0 0 rgba(107, 227, 164, 0.4)); }
+            50% { filter: drop-shadow(0 0 8px rgba(107, 227, 164, 0.7)); }
+            100% { filter: drop-shadow(0 0 0 rgba(107, 227, 164, 0.4)); }
+        }
+
         .daily-total {
-            background: rgba(255,255,255,0.04);
-            border-radius: 18px;
-            padding: 24px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            padding: 28px;
             text-align: center;
-            margin-top: 16px;
+            margin-top: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+        .daily-total:hover {
+            background: rgba(255,255,255,0.04);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
         }
 
         .daily-total-label {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
-            letter-spacing: 0.18em;
+            letter-spacing: 0.2em;
             text-transform: uppercase;
             color: var(--text-tertiary);
-            margin-bottom: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-
+        .daily-total-label::before {
+            content: "";
+            width: 20px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--success), var(--warning));
+            border-radius: 2px;
+        }
         .daily-total-value {
-            font-size: 32px;
+            font-size: 36px;
             font-weight: 800;
             color: var(--text-primary);
             font-variant-numeric: tabular-nums;
             line-height: 1;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
-
         .daily-total-unit {
-            font-size: 14px;
+            font-size: 15px;
             color: var(--text-secondary);
             font-variant-numeric: tabular-nums;
         }
 
         .macro-breakdown {
-            margin-top: 24px;
+            margin-top: 28px;
         }
 
         .macro-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 16px;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 14px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+        .macro-item:hover {
             background: rgba(255,255,255,0.03);
-            border-radius: 12px;
-            margin-bottom: 8px;
+            transform: translateX(4px);
+            border-color: rgba(255,255,255,0.08);
         }
 
         .macro-label {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
             color: var(--text-primary);
+            letter-spacing: -0.01em;
         }
 
         .macro-value {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
             font-variant-numeric: tabular-nums;
             color: var(--text-secondary);
+            background: rgba(255,255,255,0.05);
+            padding: 4px 10px;
+            border-radius: 8px;
+            min-width: 60px;
+            text-align: center;
         }
 
         /* History Tab Styles */
@@ -813,6 +936,9 @@
                 try {
                     const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(mealName)}&json=1`;
                     const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
                     const data = await response.json();
                     if (data.count > 0 && data.products && data.products.length > 0) {
                         const product = data.products[0];
@@ -822,11 +948,11 @@
                             carbs: product['carbohydrates_100g'] || 0,
                             fat: product['fat_100g'] || 0
                         };
-                        // Fill the form
-                        document.getElementById('mealCalories').value = nutrients.calories || '';
-                        document.getElementById('mealProtein').value = nutrients.protein || '';
-                        document.getElementById('mealCarbs').value = nutrients.carbs || '';
-                        document.getElementById('mealFat').value = nutrients.fat || '';
+                        // Fill the form - always set the value, even if 0
+                        document.getElementById('mealCalories').value = nutrients.calories;
+                        document.getElementById('mealProtein').value = nutrients.protein;
+                        document.getElementById('mealCarbs').value = nutrients.carbs;
+                        document.getElementById('mealFat').value = nutrients.fat;
                         // Show disclaimer
                         const productName = product.product_name || mealName;
                         foodDisclaimer.textContent = `Values are per 100g (based on "${productName}"). Adjust if your portion is different.`;
@@ -851,17 +977,27 @@
                 e.preventDefault();
 
                 // Get form values
+                const mealNameInput = document.getElementById('mealName');
+                const mealCaloriesInput = document.getElementById('mealCalories');
+                const mealProteinInput = document.getElementById('mealProtein');
+                const mealCarbsInput = document.getElementById('mealCarbs');
+                const mealFatInput = document.getElementById('mealFat');
+
+                console.log('Form submitted'); // Debug log
+
                 const mealData = {
-                    name: document.getElementById('mealName').value.trim(),
+                    name: mealNameInput.value.trim(),
                     // Time is set to current time
                     time: new Date().toLocaleTimeString('en-CA', {hour12: false, hour: '2-digit', minute: '2-digit'}),
-                    calories: parseInt(document.getElementById('mealCalories').value) || 0,
-                    protein: parseFloat(document.getElementById('mealProtein').value) || 0,
-                    carbs: parseFloat(document.getElementById('mealCarbs').value) || 0,
-                    fat: parseFloat(document.getElementById('mealFat').value) || 0,
+                    calories: parseInt(mealCaloriesInput.value) || 0,
+                    protein: parseFloat(mealProteinInput.value) || 0,
+                    carbs: parseFloat(mealCarbsInput.value) || 0,
+                    fat: parseFloat(mealFatInput.value) || 0,
                     timestamp: new Date().toISOString(),
                     date: new Date().toISOString().split('T')[0]
                 };
+
+                console.log('Meal data:', mealData); // Debug log
 
                 // Validation
                 let isValid = true;
@@ -872,27 +1008,30 @@
                     isValid = false;
                     errorMessage = 'Please enter a meal name.';
                 }
-                // Validate nutrition values
-                else if (isNaN(mealData.calories) || mealData.calories < 0) {
+                // Validate nutrition values - at least one must be greater than 0
+                else if (mealData.calories <= 0 && mealData.protein <= 0 && mealData.carbs <= 0 && mealData.fat <= 0) {
                     isValid = false;
-                    errorMessage = 'Calories must be a non-negative number.';
+                    errorMessage = 'Please enter at least one nutrition value greater than zero.';
                 }
-                else if (isNaN(mealData.protein) || mealData.protein < 0) {
+                // Validate individual fields for negative values
+                else if (mealData.calories < 0) {
                     isValid = false;
-                    errorMessage = 'Protein must be a non-negative number.';
+                    errorMessage = 'Calories cannot be negative.';
                 }
-                else if (isNaN(mealData.carbs) || mealData.carbs < 0) {
+                else if (mealData.protein < 0) {
                     isValid = false;
-                    errorMessage = 'Carbs must be a non-negative number.';
+                    errorMessage = 'Protein cannot be negative.';
                 }
-                else if (isNaN(mealData.fat) || mealData.fat < 0) {
+                else if (mealData.carbs < 0) {
                     isValid = false;
-                    errorMessage = 'Fat must be a non-negative number.';
+                    errorMessage = 'Carbs cannot be negative.';
                 }
-                else if (mealData.calories === 0 && mealData.protein === 0 && mealData.carbs === 0 && mealData.fat === 0) {
+                else if (mealData.fat < 0) {
                     isValid = false;
-                    errorMessage = 'Please enter at least one nutrition value.';
+                    errorMessage = 'Fat cannot be negative.';
                 }
+
+                console.log('Validation:', {isValid, errorMessage}); // Debug log
 
                 if (!isValid) {
                     showFormStatus(errorMessage, true);
@@ -901,11 +1040,15 @@
 
                 try {
                     // Save to localStorage first
+                    console.log('Saving to localStorage...'); // Debug log
                     await saveMealToLocalStorage(mealData);
+                    console.log('Saved to localStorage'); // Debug log
 
                     // If Supabase sync is configured, save to backend (no photo upload)
                     if (window.supabase) {
+                        console.log('Saving to Supabase...'); // Debug log
                         await syncMealToSupabase(mealData);
+                        console.log('Saved to Supabase'); // Debug log
                     }
 
                     // Reset form
