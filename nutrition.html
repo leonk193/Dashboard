@@ -195,12 +195,6 @@ main {
 .card + .card { margin-top: 16px; }
 
 /* ===== Setup Tab ===== */
-.setup-greeting {
-  font-size: 13px;
-  color: var(--text-tertiary);
-  margin: 0 0 20px;
-  line-height: 1.6;
-}
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -271,72 +265,6 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
 .calc-btn:active { transform: translateY(0); }
 .calc-btn:disabled { opacity: 0.4; cursor: default; transform: none; filter: none; }
 
-/* TDEE Results */
-.tdee-results { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
-.tdee-results.visible { display: block; }
-.tdee-target {
-  text-align: center;
-  padding: 20px;
-  background: var(--bg-secondary);
-  border-radius: 14px;
-  margin-bottom: 16px;
-}
-.tdee-target-num {
-  font-size: 48px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  color: var(--text-primary);
-  letter-spacing: -0.03em;
-}
-.tdee-target-label {
-  font-size: 13px;
-  color: var(--text-tertiary);
-  font-weight: 500;
-  margin-top: 4px;
-}
-.tdee-breakdown {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  text-align: center;
-  margin: 4px 0 16px;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  line-height: 1.6;
-}
-.macro-pills {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
-}
-.macro-pill {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px 20px;
-  border-radius: 14px;
-  min-width: 90px;
-}
-.macro-pill-protein { background: rgba(91,141,239,0.12); }
-.macro-pill-carbs { background: rgba(232,184,77,0.12); }
-.macro-pill-fat { background: rgba(232,107,141,0.12); }
-.macro-pill-val {
-  font-size: 22px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-  color: var(--text-primary);
-}
-.macro-pill-unit {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
-  margin-top: 2px;
-}
 .save-btn {
   width: 100%;
   padding: 14px;
@@ -514,6 +442,44 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
 }
 .selected-food-clear:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
 
+/* Portion Controls */
+.portions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.portion-btn {
+  width: 32px; height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
+  user-select: none;
+}
+.portion-btn:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
+.portion-btn:active { transform: scale(0.95); }
+#portionCount {
+  width: 60px;
+  text-align: center;
+  padding: 8px 6px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.portion-label {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-left: 4px;
+}
+.portion-label strong { color: var(--text-secondary); font-weight: 700; }
+
 /* Serving Adjust */
 .serving-row {
   display: flex;
@@ -568,6 +534,81 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
 .macro-auto-carbs .macro-auto-val { color: var(--ring-carbs); }
 .macro-auto-fat { background: rgba(232,107,141,0.12); }
 .macro-auto-fat .macro-auto-val { color: var(--ring-fat); }
+
+/* Scan Tab */
+.scan-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 20px 0 8px;
+}
+.scan-icon-wrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(91,141,239,0.08);
+  border: 2px dashed rgba(91,141,239,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.scan-icon-wrap svg { width: 36px; height: 36px; color: var(--ring-protein); }
+.scan-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.scan-desc {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  max-width: 380px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.scan-features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 400px;
+  text-align: left;
+}
+.scan-feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.scan-feature-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+.scan-feature-icon.barcode { background: rgba(91,141,239,0.12); }
+.scan-feature-icon.photo { background: rgba(232,141,77,0.12); }
+.scan-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--warning-bg);
+  color: var(--warning);
+  margin-top: 16px;
+}
 
 .submit-btn {
   width: 100%;
@@ -903,9 +944,6 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
   .meal-row { flex-wrap: wrap; }
   .meal-row .input-control { flex: 1 0 calc(50% - 6px); }
   .daily-totals { grid-template-columns: repeat(2, 1fr); }
-  .macro-pills { gap: 8px; }
-  .macro-pill { min-width: 80px; padding: 10px 14px; }
-  .tdee-target-num { font-size: 38px; }
   .card { padding: 18px; }
 }
 @media (max-width: 400px) {
@@ -914,7 +952,6 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
   .daily-totals { grid-template-columns: repeat(2, 1fr); }
   .meal-item { flex-wrap: wrap; }
   .meal-cals { order: -1; }
-  .tdee-target-num { font-size: 32px; }
 }
 </style>
 </head>
@@ -922,7 +959,7 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
 
 <main>
   <!-- Back + Header -->
-  <a href="main.html" class="fin-back-btn" aria-label="Back to dashboard">
+  <a href="index.html" class="fin-back-btn" aria-label="Back to dashboard">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
     Back
   </a>
@@ -937,80 +974,46 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
 
   <!-- Tab Bar -->
   <div class="tab-header" role="tablist">
-    <button class="tab-btn" data-tab="setup" role="tab" aria-controls="setup-pane">Setup</button>
     <button class="tab-btn" data-tab="log" role="tab" aria-controls="log-pane">Log Meal</button>
+    <button class="tab-btn" data-tab="scan" role="tab" aria-controls="scan-pane">Scan</button>
     <button class="tab-btn active" data-tab="today" role="tab" aria-controls="today-pane">Today</button>
   </div>
 
-  <!-- ===== Setup Pane ===== -->
-  <div class="tab-pane" id="setup-pane" role="tabpanel">
+  <!-- ===== Scan Pane ===== -->
+  <div class="tab-pane" id="scan-pane" role="tabpanel">
     <div class="card">
-      <p class="setup-greeting">Enter your stats and we'll calculate your daily energy expenditure and macro targets. You can adjust these anytime.</p>
-      <form id="setupForm" class="form-grid">
-        <div>
-          <label class="field-label" for="setupAge">Age</label>
-          <input class="num" type="number" id="setupAge" min="10" max="120" placeholder="25" autocomplete="off" required>
-          <div class="form-error" id="setupAgeErr"></div>
+      <div class="scan-layout">
+        <div class="scan-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+            <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+            <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+            <path d="M7 12h10"/>
+            <path d="M12 7v10"/>
+          </svg>
         </div>
-        <div>
-          <label class="field-label" for="setupSex">Sex</label>
-          <select id="setupSex" required>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
+        <div class="scan-title">AI Meal Scanner</div>
+        <div class="scan-desc">
+          Take a photo of your meal or scan a barcode to get instant nutrition data. AI analyzes the image and returns calories, protein, carbs, and fat — no typing required.
         </div>
-        <div>
-          <label class="field-label" for="setupWeight">Weight <span class="unit">(kg)</span></label>
-          <input class="num" type="number" id="setupWeight" min="20" max="400" step="0.1" placeholder="80" autocomplete="off" required>
-          <div class="form-error" id="setupWeightErr"></div>
-        </div>
-        <div>
-          <label class="field-label" for="setupHeight">Height <span class="unit">(cm)</span></label>
-          <input class="num" type="number" id="setupHeight" min="80" max="280" step="0.1" placeholder="180" autocomplete="off" required>
-          <div class="form-error" id="setupHeightErr"></div>
-        </div>
-        <div>
-          <label class="field-label" for="setupActivity">Activity Level</label>
-          <select id="setupActivity" required>
-            <option value="sedentary">Sedentary (desk job)</option>
-            <option value="light">Light (1-3 days / wk)</option>
-            <option value="moderate">Moderate (3-5 days / wk)</option>
-            <option value="heavy">Heavy (6-7 days / wk)</option>
-            <option value="athlete">Athlete (2× / day)</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label" for="setupGoal">Goal</label>
-          <select id="setupGoal" required>
-            <option value="lose">Lose weight</option>
-            <option value="maintain">Maintain weight</option>
-            <option value="gain">Gain weight</option>
-          </select>
-        </div>
-      </form>
-      <button class="calc-btn" id="calcBtn">Calculate Macros</button>
-
-      <div class="tdee-results" id="tdeeResults">
-        <div class="tdee-target">
-          <div class="tdee-target-num" id="tdeeCalValue">0</div>
-          <div class="tdee-target-label">daily calorie target</div>
-        </div>
-        <div class="tdee-breakdown" id="tdeeBreakdown">BMR 1,820 × 1.55 activity − 20% deficit</div>
-        <div class="macro-pills">
-          <div class="macro-pill macro-pill-protein">
-            <div class="macro-pill-val" id="tdeeProtein">0</div>
-            <div class="macro-pill-unit">Protein g</div>
+        <div class="scan-features">
+          <div class="scan-feature">
+            <div class="scan-feature-icon barcode">📷</div>
+            <div>
+              <strong>Snap a photo</strong><br>
+              Take a picture of your meal and AI identifies the food + portion size
+            </div>
           </div>
-          <div class="macro-pill macro-pill-carbs">
-            <div class="macro-pill-val" id="tdeeCarbs">0</div>
-            <div class="macro-pill-unit">Carbs g</div>
-          </div>
-          <div class="macro-pill macro-pill-fat">
-            <div class="macro-pill-val" id="tdeeFat">0</div>
-            <div class="macro-pill-unit">Fat g</div>
+          <div class="scan-feature">
+            <div class="scan-feature-icon photo">📦</div>
+            <div>
+              <strong>Scan barcodes</strong><br>
+              Scan packaged food barcodes to pull macros from the USDA database
+            </div>
           </div>
         </div>
-        <button class="save-btn" id="saveProfileBtn">Save Profile</button>
+        <div class="scan-badge">Coming Soon</div>
       </div>
     </div>
   </div>
@@ -1044,15 +1047,24 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
             <button class="selected-food-clear" id="clearSelection" aria-label="Clear selection">✕</button>
           </div>
           <div class="serving-adjust">
-            <label class="field-label">Amount <span class="unit">(grams)</span></label>
-            <div class="serving-row">
-              <input class="num" type="number" id="servingGrams" min="1" value="100" step="5">
-              <span class="serving-preset" data-grams="25">25g</span>
-              <span class="serving-preset" data-grams="50">50g</span>
-              <span class="serving-preset" data-grams="100">100g</span>
-              <span class="serving-preset" data-grams="150">150g</span>
-              <span class="serving-preset" data-grams="200">200g</span>
-              <span class="serving-preset" data-grams="300">300g</span>
+            <label class="field-label">How many servings?</label>
+            <div class="portions-row">
+              <button class="portion-btn" id="portionDown" type="button">−</button>
+              <input class="num" type="number" id="portionCount" value="1" min="0.1" max="50" step="0.5">
+              <button class="portion-btn" id="portionUp" type="button">+</button>
+              <span class="portion-label">servings × <span id="portionSize">100</span>g = <strong id="totalGramsLabel">100</strong>g</span>
+            </div>
+            <div style="margin-top:10px">
+              <label class="field-label">Or type grams directly</label>
+              <div class="serving-row">
+                <input class="num" type="number" id="servingGrams" min="1" value="100" step="5">
+                <span class="serving-preset" data-grams="25">25g</span>
+                <span class="serving-preset" data-grams="50">50g</span>
+                <span class="serving-preset" data-grams="100">100g</span>
+                <span class="serving-preset" data-grams="150">150g</span>
+                <span class="serving-preset" data-grams="200">200g</span>
+                <span class="serving-preset" data-grams="300">300g</span>
+              </div>
             </div>
           </div>
           <div class="macro-display-auto" id="macroDisplay">
@@ -1483,29 +1495,12 @@ function refreshUI() {
   const jump = document.getElementById('jumpToday');
   jump.style.display = currentDateKey === todayKey() ? 'none' : 'inline';
 
-  // Log tab: show profile-prompt if no profile
-  if (!profile) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    document.querySelector('[data-tab="setup"]').classList.add('active');
-    document.getElementById('setup-pane').classList.add('active');
-  }
 }
 
 /* ===== Tab Switching ===== */
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', function() {
     const tab = this.dataset.tab;
-    // Block Today tab if no profile
-    if (tab === 'today' || tab === 'log') {
-      if (!getProfile()) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-        document.querySelector('[data-tab="setup"]').classList.add('active');
-        document.getElementById('setup-pane').classList.add('active');
-        return;
-      }
-    }
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     this.classList.add('active');
@@ -1513,78 +1508,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     if (tab === 'today') refreshUI();
   });
 });
-
-/* ===== Setup Form ===== */
-document.getElementById('calcBtn').addEventListener('click', function() {
-  const errs = validateSetup();
-  if (errs) { showSetupErrors(errs); return; }
-  clearSetupErrors();
-
-  const profile = readSetupForm();
-  const targets = calculateTDEE(profile);
-
-  document.getElementById('tdeeCalValue').textContent = targets.calories.toLocaleString();
-  const actNames = { sedentary: '1.2', light: '1.375', moderate: '1.55', heavy: '1.725', athlete: '1.9' };
-  const goalNames = { lose: '−20% deficit', maintain: 'maintenance', gain: '+15% surplus' };
-  document.getElementById('tdeeBreakdown').textContent =
-    `BMR ${targets._bmr.toLocaleString()} × ${actNames[profile.activity]} activity ${goalNames[profile.goal]}`;
-  document.getElementById('tdeeProtein').textContent = targets.protein;
-  document.getElementById('tdeeCarbs').textContent = targets.carbs;
-  document.getElementById('tdeeFat').textContent = targets.fat;
-  document.getElementById('tdeeResults').classList.add('visible');
-});
-
-document.getElementById('saveProfileBtn').addEventListener('click', function() {
-  const errs = validateSetup();
-  if (errs) { showSetupErrors(errs); return; }
-  clearSetupErrors();
-  const profile = readSetupForm();
-  saveProfile(profile);
-  // Switch to Today tab
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.querySelector('[data-tab="today"]').classList.add('active');
-  document.getElementById('today-pane').classList.add('active');
-  refreshUI();
-});
-
-function readSetupForm() {
-  return {
-    age: +document.getElementById('setupAge').value,
-    sex: document.getElementById('setupSex').value,
-    weightKg: +document.getElementById('setupWeight').value,
-    heightCm: +document.getElementById('setupHeight').value,
-    activity: document.getElementById('setupActivity').value,
-    goal: document.getElementById('setupGoal').value,
-  };
-}
-
-function validateSetup() {
-  const fields = [
-    { id: 'setupAge', min: 10, max: 120, label: 'Age' },
-    { id: 'setupWeight', min: 10, max: 400, label: 'Weight' },
-    { id: 'setupHeight', min: 50, max: 300, label: 'Height' },
-  ];
-  for (const f of fields) {
-    const el = document.getElementById(f.id);
-    const val = +el.value;
-    if (!el.value || isNaN(val) || val < f.min || val > f.max) {
-      return f.label + ' must be between ' + f.min + ' and ' + f.max;
-    }
-  }
-  return null;
-}
-
-function showSetupErrors(msg) {
-  document.querySelectorAll('.form-error').forEach(e => e.textContent = '');
-  document.querySelectorAll('input.error').forEach(e => e.classList.remove('error'));
-  document.getElementById('setupAgeErr').textContent = msg;
-  document.getElementById('setupAge').classList.add('error');
-}
-function clearSetupErrors() {
-  document.querySelectorAll('.form-error').forEach(e => e.textContent = '');
-  document.querySelectorAll('input.error').forEach(e => e.classList.remove('error'));
-}
 
 /* ===== Meal Form ===== */
 document.getElementById('mealForm').addEventListener('submit', function(e) {
@@ -1707,15 +1630,38 @@ function selectFood(foodData) {
   const brand = f.brandOwner || 'USDA';
 
   document.getElementById('selFoodName').textContent = name;
-  document.getElementById('selFoodSource').textContent = `${brand} · per 100g`;
+  document.getElementById('selFoodSource').textContent = `${brand} · ${f.servingSize || 100}g per serving`;
   document.getElementById('selectedFoodSection').style.display = 'block';
   document.getElementById('searchResults').classList.remove('visible');
   document.getElementById('searchHint').textContent = `Selected: ${name}`;
 
-  // Set default serving to the food's serving size or 100g
-  const defaultGrams = f.servingSize || 100;
-  document.getElementById('servingGrams').value = defaultGrams;
-  updateMacroDisplay(defaultGrams);
+  // Set portion defaults
+  const portionGrams = f.servingSize || 100;
+  selectedFoodData.portionSizeGrams = portionGrams;
+  document.getElementById('portionSize').textContent = portionGrams;
+  document.getElementById('portionCount').value = 1;
+  document.getElementById('servingGrams').value = portionGrams;
+  updatePortionDisplay(portionGrams);
+  updateMacroDisplay(portionGrams);
+}
+
+function updatePortionDisplay(grams) {
+  document.getElementById('totalGramsLabel').textContent = Math.round(grams);
+}
+
+function updateFromPortions(count) {
+  const g = Math.round((selectedFoodData.portionSizeGrams || 100) * count);
+  document.getElementById('servingGrams').value = g;
+  updatePortionDisplay(g);
+  updateMacroDisplay(g);
+}
+
+function updateFromGrams(grams) {
+  const sz = selectedFoodData.portionSizeGrams || 100;
+  const count = Math.round((grams / sz) * 10) / 10;
+  document.getElementById('portionCount').value = Math.max(0.1, count);
+  updatePortionDisplay(grams);
+  updateMacroDisplay(grams);
 }
 
 function updateMacroDisplay(grams) {
@@ -1733,10 +1679,11 @@ function updateMacroDisplay(grams) {
   document.getElementById('macFat').textContent = fat;
 }
 
-// Serving size input
+// Serving size input — syncs with portions
 document.getElementById('servingGrams').addEventListener('input', function() {
   const g = parseFloat(this.value) || 0;
-  updateMacroDisplay(g);
+  if (selectedFoodData) updateFromGrams(g);
+  else updateMacroDisplay(g);
   // Update preset active state
   document.querySelectorAll('.serving-preset').forEach(p => {
     p.classList.toggle('active', parseInt(p.dataset.grams) === Math.round(g));
@@ -1748,10 +1695,31 @@ document.querySelectorAll('.serving-preset').forEach(p => {
   p.addEventListener('click', function() {
     const g = parseInt(this.dataset.grams);
     document.getElementById('servingGrams').value = g;
-    updateMacroDisplay(g);
+    if (selectedFoodData) updateFromGrams(g);
+    else updateMacroDisplay(g);
     document.querySelectorAll('.serving-preset').forEach(sp => sp.classList.remove('active'));
     this.classList.add('active');
   });
+});
+
+// Portion controls
+document.getElementById('portionDown').addEventListener('click', function() {
+  const el = document.getElementById('portionCount');
+  let val = parseFloat(el.value) || 1;
+  val = Math.max(0.5, Math.round((val - 0.5) * 10) / 10);
+  el.value = val;
+  if (selectedFoodData) updateFromPortions(val);
+});
+document.getElementById('portionUp').addEventListener('click', function() {
+  const el = document.getElementById('portionCount');
+  let val = parseFloat(el.value) || 1;
+  val = Math.min(20, Math.round((val + 0.5) * 10) / 10);
+  el.value = val;
+  if (selectedFoodData) updateFromPortions(val);
+});
+document.getElementById('portionCount').addEventListener('input', function() {
+  const val = parseFloat(this.value) || 1;
+  if (selectedFoodData) updateFromPortions(val);
 });
 
 // Clear selection
@@ -1949,20 +1917,11 @@ document.getElementById('settingsSave').addEventListener('click', function() {
 
 /* ===== Init ===== */
 function init() {
-  const profile = getProfile();
-  if (profile) {
-    // Show Today tab by default
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    document.querySelector('[data-tab="today"]').classList.add('active');
-    document.getElementById('today-pane').classList.add('active');
-  } else {
-    // Show Setup
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    document.querySelector('[data-tab="setup"]').classList.add('active');
-    document.getElementById('setup-pane').classList.add('active');
-  }
+  // Always show Today tab by default
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-tab="today"]').classList.add('active');
+  document.getElementById('today-pane').classList.add('active');
   refreshUI();
 }
 
