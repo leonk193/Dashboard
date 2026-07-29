@@ -980,6 +980,22 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
   .meal-row .input-control { flex: 1 0 calc(50% - 6px); }
   .daily-totals { grid-template-columns: repeat(2, 1fr); }
   .card { padding: 18px; }
+
+  /* Settings modal — keep X reachable */
+  .modal-overlay {
+    align-items: flex-start;
+    padding-top: 60px;
+    overflow-y: auto;
+  }
+  .modal { padding: 20px; }
+
+  /* Macro display — 2 cols so numbers have room */
+  .macro-display-auto { grid-template-columns: repeat(2, 1fr); }
+
+  /* Serving presets — compact */
+  .serving-row { gap: 4px; }
+  .serving-preset { padding: 4px 8px; font-size: 10px; }
+  .serving-preset:nth-child(n+6) { display: none; }
 }
 @media (max-width: 400px) {
   .rings-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -987,6 +1003,10 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
   .daily-totals { grid-template-columns: repeat(2, 1fr); }
   .meal-item { flex-wrap: wrap; }
   .meal-cals { order: -1; }
+
+  /* Narrower serving presets */
+  .serving-preset { font-size: 9px; padding: 3px 6px; }
+  .serving-preset:nth-child(n+5) { display: none; }
 }
 </style>
 </head>

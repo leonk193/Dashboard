@@ -50,6 +50,7 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
 .title .role { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
 
 /* ===== Back to dashboard ===== */
+.nova-page { max-width: 600px; margin: 0 auto; padding: 28px 18px 0; }
 .fin-back-btn {
   display: inline-flex;
   align-items: center;
@@ -110,6 +111,7 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
 <body>
 
   <!-- ===== BACK BUTTON ===== -->
+  <div class="nova-page">
   <a href="index.html" class="fin-back-btn" aria-label="Back to dashboard">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     <span>Back</span>
@@ -140,6 +142,7 @@ body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: 
       <button id="send" aria-label="Send">→</button>
     </div>
   </div>
+	</div>
 
 <script>
 (function(){
