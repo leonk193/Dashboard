@@ -359,6 +359,216 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
 .meal-row { display: flex; gap: 12px; }
 .meal-row .input-control { flex: 1; min-width: 0; }
 .meal-row .input-control input { text-align: center; }
+
+/* Mode Toggle */
+.mode-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 18px;
+}
+.mode-btn {
+  flex: 1;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mode-btn.active { color: var(--text-primary); background: rgba(255,255,255,0.08); }
+.mode-btn:hover { color: var(--text-secondary); }
+
+/* Food Search */
+.food-search-wrap {
+  position: relative;
+  margin-bottom: 8px;
+}
+.food-search-wrap .search-icon {
+  position: absolute;
+  left: 13px; top: 50%;
+  transform: translateY(-50%);
+  width: 18px; height: 18px;
+  color: var(--text-quaternary);
+  pointer-events: none;
+}
+#foodSearch {
+  padding-left: 40px;
+  padding-right: 36px;
+  font-size: 15px;
+}
+.search-spinner {
+  position: absolute;
+  right: 12px; top: 50%;
+  transform: translateY(-50%);
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--text-tertiary);
+  border-radius: 50%;
+  display: none;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+.search-spinner.visible { display: block; }
+
+.search-hint {
+  font-size: 12px;
+  color: var(--text-quaternary);
+  margin-bottom: 12px;
+}
+.search-results {
+  max-height: 280px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  display: none;
+}
+.search-results.visible { display: block; }
+.search-results::-webkit-scrollbar { width: 4px; }
+.search-results::-webkit-scrollbar-track { background: transparent; }
+.search-results::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.12s;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { background: rgba(255,255,255,0.05); }
+.search-result-item:active { background: rgba(255,255,255,0.08); }
+.sr-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+.sr-brand {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+.sr-macros {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+.sr-info { flex: 1; min-width: 0; }
+.sr-arrow {
+  color: var(--text-quaternary);
+  flex-shrink: 0;
+}
+.search-error {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+
+/* Selected Food */
+.selected-food {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(91,141,239,0.08);
+  border: 1px solid rgba(91,141,239,0.15);
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+.selected-food-info { flex: 1; }
+.selected-food-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.selected-food-source {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+.selected-food-clear {
+  width: 28px; height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-quaternary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+.selected-food-clear:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
+
+/* Serving Adjust */
+.serving-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.serving-row input { flex: 1; min-width: 80px; }
+.serving-preset {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.serving-preset:hover { background: rgba(255,255,255,0.08); color: var(--text-secondary); }
+.serving-preset.active { border-color: var(--ring-protein); color: var(--ring-protein); background: rgba(91,141,239,0.1); }
+
+/* Macro Display */
+.macro-display-auto {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 14px 0;
+}
+.macro-auto {
+  text-align: center;
+  padding: 12px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+.macro-auto-val {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+.macro-auto-cal { background: rgba(232,141,77,0.12); }
+.macro-auto-cal .macro-auto-val { color: var(--ring-calories); }
+.macro-auto-protein { background: rgba(91,141,239,0.12); }
+.macro-auto-protein .macro-auto-val { color: var(--ring-protein); }
+.macro-auto-carbs { background: rgba(232,184,77,0.12); }
+.macro-auto-carbs .macro-auto-val { color: var(--ring-carbs); }
+.macro-auto-fat { background: rgba(232,107,141,0.12); }
+.macro-auto-fat .macro-auto-val { color: var(--ring-fat); }
+
 .submit-btn {
   width: 100%;
   padding: 14px;
@@ -808,7 +1018,56 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
   <!-- ===== Log Meal Pane ===== -->
   <div class="tab-pane" id="log-pane" role="tabpanel">
     <div class="card">
-      <form id="mealForm">
+      <!-- Mode toggle -->
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="search" id="modeSearch">🔍 Search Food</button>
+        <button class="mode-btn" data-mode="manual" id="modeManual">✏️ Quick Add</button>
+      </div>
+
+      <!-- Search mode -->
+      <div id="foodSearchMode">
+        <div class="food-search-wrap">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="foodSearch" placeholder="Search foods..." autocomplete="off">
+          <span class="search-spinner" id="searchSpinner"></span>
+        </div>
+        <div class="search-hint" id="searchHint">Type a food name to search the USDA database</div>
+        <div class="search-results" id="searchResults"></div>
+
+        <!-- Selected food (hidden until selection) -->
+        <div id="selectedFoodSection" style="display:none">
+          <div class="selected-food">
+            <div class="selected-food-info">
+              <div class="selected-food-name" id="selFoodName">Food</div>
+              <div class="selected-food-source" id="selFoodSource">USDA</div>
+            </div>
+            <button class="selected-food-clear" id="clearSelection" aria-label="Clear selection">✕</button>
+          </div>
+          <div class="serving-adjust">
+            <label class="field-label">Amount <span class="unit">(grams)</span></label>
+            <div class="serving-row">
+              <input class="num" type="number" id="servingGrams" min="1" value="100" step="5">
+              <span class="serving-preset" data-grams="25">25g</span>
+              <span class="serving-preset" data-grams="50">50g</span>
+              <span class="serving-preset" data-grams="100">100g</span>
+              <span class="serving-preset" data-grams="150">150g</span>
+              <span class="serving-preset" data-grams="200">200g</span>
+              <span class="serving-preset" data-grams="300">300g</span>
+            </div>
+          </div>
+          <div class="macro-display-auto" id="macroDisplay">
+            <div class="macro-auto macro-auto-cal"><span class="macro-auto-val" id="macCal">0</span> cal</div>
+            <div class="macro-auto macro-auto-protein"><span class="macro-auto-val" id="macProtein">0</span>g protein</div>
+            <div class="macro-auto macro-auto-carbs"><span class="macro-auto-val" id="macCarbs">0</span>g carbs</div>
+            <div class="macro-auto macro-auto-fat"><span class="macro-auto-val" id="macFat">0</span>g fat</div>
+          </div>
+          <button class="submit-btn" id="logSearchedBtn">Log Meal</button>
+          <div class="form-status" id="searchStatus"></div>
+        </div>
+      </div>
+
+      <!-- Manual mode (hidden by default) -->
+      <form id="mealForm" style="display:none">
         <div class="form-grid">
           <div class="full-width">
             <label class="field-label" for="mealName">Meal Name</label>
@@ -974,6 +1233,49 @@ const FOOD_LIST = [
   'Whole Wheat Bread', 'Quinoa', 'Steak', 'Milk', 'Cottage Cheese',
   'Black Beans', 'Blueberries', 'Mixed Greens Salad', 'Turkey Sandwich',
 ];
+
+/* ===== USDA API ===== */
+const USDA_API_KEY = 'DEMO_KEY'; // Get a free key at https://fdc.nal.usda.gov/api-key-signup.html
+const USDA_SEARCH_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
+
+// Nutrient IDs we care about
+const NUTRIENTS = { energy: 1008, protein: 1003, fat: 1004, carbs: 1005 };
+
+let searchTimeout = null;
+let selectedFoodData = null; // { per100g: {cal, protein, carbs, fat}, name, brand }
+
+async function searchFoods(query) {
+  if (!query || query.length < 2) return [];
+  const url = `${USDA_SEARCH_URL}?api_key=${USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=8&dataType=Branded,SR Legacy,Foundation`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    return data.foods || [];
+  } catch (e) {
+    console.warn('USDA search failed:', e);
+    return [];
+  }
+}
+
+function extractNutrientsPer100g(food) {
+  const sv = food.servingSize || 100;
+  const nutrients = {};
+  if (food.foodNutrients) {
+    for (const n of food.foodNutrients) {
+      const val = n.value || 0;
+      if (n.nutrientId === NUTRIENTS.energy) nutrients.calories = val / sv * 100;
+      if (n.nutrientId === NUTRIENTS.protein) nutrients.protein = val / sv * 100;
+      if (n.nutrientId === NUTRIENTS.fat) nutrients.fat = val / sv * 100;
+      if (n.nutrientId === NUTRIENTS.carbs) nutrients.carbs = val / sv * 100;
+    }
+  }
+  return nutrients;
+}
+
+function formatMacro(val) {
+  return val < 10 ? val.toFixed(1) : Math.round(val);
+}
 
 /* ===== Data Layer ===== */
 function getData(key, fallback) {
@@ -1327,6 +1629,181 @@ document.getElementById('cancelEditBtn').addEventListener('click', function() {
   document.getElementById('mealStatus').textContent = '';
 });
 
+/* ===== Mode Toggle ===== */
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const mode = this.dataset.mode;
+    document.getElementById('foodSearchMode').style.display = mode === 'search' ? 'block' : 'none';
+    document.getElementById('mealForm').style.display = mode === 'manual' ? 'block' : 'none';
+  });
+});
+
+/* ===== Food Search ===== */
+document.getElementById('foodSearch').addEventListener('input', function() {
+  const q = this.value.trim();
+  const results = document.getElementById('searchResults');
+  const spinner = document.getElementById('searchSpinner');
+  const hint = document.getElementById('searchHint');
+
+  if (searchTimeout) clearTimeout(searchTimeout);
+
+  if (q.length < 2) {
+    results.classList.remove('visible');
+    results.innerHTML = '';
+    hint.textContent = 'Type at least 2 characters to search';
+    return;
+  }
+
+  hint.textContent = 'Searching...';
+  spinner.classList.add('visible');
+
+  searchTimeout = setTimeout(async () => {
+    const foods = await searchFoods(q);
+    spinner.classList.remove('visible');
+
+    if (foods.length === 0) {
+      hint.textContent = 'No results found. Try a different search or use Quick Add.';
+      results.classList.remove('visible');
+      return;
+    }
+
+    hint.textContent = `Found ${foods.length} results`;
+    results.innerHTML = foods.map(f => {
+      const per100 = extractNutrientsPer100g(f);
+      const sv = f.servingSize || 100;
+      const svText = f.servingSize ? `${sv}g` : 'per 100g';
+      return `<div class="search-result-item" data-idx="${foods.indexOf(f)}">
+        <div class="sr-info">
+          <div class="sr-name">${escHtml(f.description || 'Unknown')}</div>
+          <div class="sr-brand">${escHtml(f.brandOwner || 'USDA')} · ${svText}</div>
+        </div>
+        <div class="sr-macros">
+          <span>${Math.round(per100.calories || 0)}cal</span>
+          <span>P${formatMacro(per100.protein || 0)}</span>
+          <span>C${formatMacro(per100.carbs || 0)}</span>
+          <span>F${formatMacro(per100.fat || 0)}</span>
+        </div>
+        <div class="sr-arrow">→</div>
+      </div>`;
+    }).join('');
+    results.classList.add('visible');
+
+    // Store per-100g data on each result row
+    results.querySelectorAll('.search-result-item').forEach((el, i) => {
+      el._foodData = { food: foods[i], per100: extractNutrientsPer100g(foods[i]) };
+      el.addEventListener('click', function() {
+        selectFood(this._foodData);
+      });
+    });
+  }, 350);
+});
+
+function selectFood(foodData) {
+  selectedFoodData = foodData;
+  const f = foodData.food;
+  const name = f.description || 'Unknown';
+  const brand = f.brandOwner || 'USDA';
+
+  document.getElementById('selFoodName').textContent = name;
+  document.getElementById('selFoodSource').textContent = `${brand} · per 100g`;
+  document.getElementById('selectedFoodSection').style.display = 'block';
+  document.getElementById('searchResults').classList.remove('visible');
+  document.getElementById('searchHint').textContent = `Selected: ${name}`;
+
+  // Set default serving to the food's serving size or 100g
+  const defaultGrams = f.servingSize || 100;
+  document.getElementById('servingGrams').value = defaultGrams;
+  updateMacroDisplay(defaultGrams);
+}
+
+function updateMacroDisplay(grams) {
+  if (!selectedFoodData) return;
+  const p100 = selectedFoodData.per100;
+  const factor = grams / 100;
+  const cal = Math.round((p100.calories || 0) * factor);
+  const protein = Math.round((p100.protein || 0) * factor * 10) / 10;
+  const carbs = Math.round((p100.carbs || 0) * factor * 10) / 10;
+  const fat = Math.round((p100.fat || 0) * factor * 10) / 10;
+
+  document.getElementById('macCal').textContent = cal;
+  document.getElementById('macProtein').textContent = protein;
+  document.getElementById('macCarbs').textContent = carbs;
+  document.getElementById('macFat').textContent = fat;
+}
+
+// Serving size input
+document.getElementById('servingGrams').addEventListener('input', function() {
+  const g = parseFloat(this.value) || 0;
+  updateMacroDisplay(g);
+  // Update preset active state
+  document.querySelectorAll('.serving-preset').forEach(p => {
+    p.classList.toggle('active', parseInt(p.dataset.grams) === Math.round(g));
+  });
+});
+
+// Serving presets
+document.querySelectorAll('.serving-preset').forEach(p => {
+  p.addEventListener('click', function() {
+    const g = parseInt(this.dataset.grams);
+    document.getElementById('servingGrams').value = g;
+    updateMacroDisplay(g);
+    document.querySelectorAll('.serving-preset').forEach(sp => sp.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// Clear selection
+document.getElementById('clearSelection').addEventListener('click', function() {
+  selectedFoodData = null;
+  document.getElementById('selectedFoodSection').style.display = 'none';
+  document.getElementById('foodSearch').value = '';
+  document.getElementById('foodSearch').focus();
+  document.getElementById('searchHint').textContent = 'Type a food name to search the USDA database';
+});
+
+// Log searched food
+document.getElementById('logSearchedBtn').addEventListener('click', function() {
+  if (!selectedFoodData) return;
+  const status = document.getElementById('searchStatus');
+  const name = document.getElementById('selFoodName').textContent;
+  const grams = parseFloat(document.getElementById('servingGrams').value) || 100;
+  const p100 = selectedFoodData.per100;
+  const factor = grams / 100;
+  const cal = Math.round((p100.calories || 0) * factor);
+  const protein = Math.round((p100.protein || 0) * factor * 10) / 10;
+  const carbs = Math.round((p100.carbs || 0) * factor * 10) / 10;
+  const fat = Math.round((p100.fat || 0) * factor * 10) / 10;
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+  const displayName = grams !== 100 ? `${name} (${grams}g)` : name;
+  const meal = { id: 'm_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), name: displayName, calories: cal, protein, carbs, fat, time: timeStr };
+  addMeal(meal, currentDateKey);
+  status.textContent = 'Meal logged ✓'; status.className = 'form-status success';
+
+  // Clear selection
+  selectedFoodData = null;
+  document.getElementById('selectedFoodSection').style.display = 'none';
+  document.getElementById('foodSearch').value = '';
+  document.getElementById('searchHint').textContent = 'Type a food name to search the USDA database';
+
+  setTimeout(() => { status.textContent = ''; status.className = 'form-status'; }, 2500);
+  if (document.querySelector('[data-tab="today"]')) refreshUI();
+});
+
+// Search keyboard shortcut: Enter on search input
+document.getElementById('foodSearch').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    // If there are visible results, click the first one
+    const first = document.querySelector('.search-result-item');
+    if (first) first.click();
+  }
+});
+
 /* ===== Meal Actions (edit/delete via delegation) ===== */
 document.getElementById('mealList').addEventListener('click', function(e) {
   const btn = e.target.closest('.meal-action');
@@ -1338,6 +1815,12 @@ document.getElementById('mealList').addEventListener('click', function(e) {
 
   if (btn.dataset.action === 'edit') {
     editingMealId = id;
+    // Switch to Quick Add mode
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('[data-mode="manual"]').classList.add('active');
+    document.getElementById('foodSearchMode').style.display = 'none';
+    document.getElementById('mealForm').style.display = 'block';
+
     document.getElementById('mealName').value = meal.name;
     document.getElementById('mealCal').value = meal.calories;
     document.getElementById('mealProtein').value = meal.protein;
