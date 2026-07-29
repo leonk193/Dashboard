@@ -1254,17 +1254,33 @@ const USDA_SEARCH_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
 const NUTRIENTS = { energy: 1008, protein: 1003, fat: 1004, carbs: 1005 };
 
 let searchTimeout = null;
+let lastSearchTime = 0;
+const SEARCH_CACHE = {};
 let selectedFoodData = null; // { per100g: {cal, protein, carbs, fat}, name, brand }
 
 async function searchFoods(query) {
   if (!query || query.length < 2) return [];
+  // Check cache first
+  const cacheKey = query.toLowerCase().trim();
+  if (SEARCH_CACHE[cacheKey] && Date.now() - SEARCH_CACHE[cacheKey].time < 120000) {
+    return SEARCH_CACHE[cacheKey].data;
+  }
+  // Rate-limit: at least 1.5s between requests for DEMO_KEY
+  const now = Date.now();
+  const wait = Math.max(0, 1500 - (now - lastSearchTime));
+  if (wait > 0) await new Promise(r => setTimeout(r, wait));
+  lastSearchTime = Date.now();
   const url = `${USDA_SEARCH_URL}?api_key=${USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=8&dataType=Branded,SR Legacy,Foundation`;
   try {
     const res = await fetch(url);
+    if (res.status === 429) throw new Error('rate_limited');
     if (!res.ok) throw new Error('API error');
     const data = await res.json();
-    return data.foods || [];
+    const foods = data.foods || [];
+    SEARCH_CACHE[cacheKey] = { data: foods, time: Date.now() };
+    return foods;
   } catch (e) {
+    if (e.message === 'rate_limited') throw e;
     console.warn('USDA search failed:', e);
     return [];
   }
@@ -1583,7 +1599,19 @@ document.getElementById('foodSearch').addEventListener('input', function() {
   spinner.classList.add('visible');
 
   searchTimeout = setTimeout(async () => {
-    const foods = await searchFoods(q);
+    let foods;
+    try {
+      foods = await searchFoods(q);
+    } catch (e) {
+      spinner.classList.remove('visible');
+      if (e.message === 'rate_limited') {
+        hint.textContent = 'Search rate limit reached. Please wait a moment and try again.';
+      } else {
+        hint.textContent = 'Search failed. Try again or use Quick Add.';
+      }
+      results.classList.remove('visible');
+      return;
+    }
     spinner.classList.remove('visible');
 
     if (foods.length === 0) {
@@ -1855,13 +1883,12 @@ const settingsModal = document.getElementById('settingsModal');
 
 document.getElementById('settingsOpen').addEventListener('click', function() {
   const p = getProfile();
-  if (!p) { return; }
-  document.getElementById('setAge').value = p.age;
-  document.getElementById('setSex').value = p.sex;
-  document.getElementById('setWeight').value = p.weightKg;
-  document.getElementById('setHeight').value = p.heightCm;
-  document.getElementById('setActivity').value = p.activity;
-  document.getElementById('setGoal').value = p.goal;
+  document.getElementById('setAge').value = p ? p.age : '';
+  document.getElementById('setSex').value = p ? p.sex : 'male';
+  document.getElementById('setWeight').value = p ? p.weightKg : '';
+  document.getElementById('setHeight').value = p ? p.heightCm : '';
+  document.getElementById('setActivity').value = p ? p.activity : 'moderate';
+  document.getElementById('setGoal').value = p ? p.goal : 'maintain';
   document.getElementById('settingsStatus').textContent = '';
   settingsModal.classList.add('visible');
 });
