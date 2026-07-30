@@ -54,6 +54,8 @@
     _origSet: null,
     _origRemove: null,
     _booted: false,
+    _activated: {},
+    _matched: {},
 
     onAuthChange: function (fn) {
       this._cbs.push(fn);
@@ -89,17 +91,13 @@
 
     signOut: async function () {
       var self = this;
-      // Close all realtime channels
-      for (var i = 0; i < self._channels.length; i++) {
-        try { self._channels[i].unsubscribe(); } catch (e) {}
-      }
-      self._channels = [];
       // Clear push timers
       for (var k in self._pushTimers) {
         clearTimeout(self._pushTimers[k]);
       }
       self._pushTimers = {};
       self._lastSyncedJson = {};
+      // The SIGNED_OUT handler in onAuthStateChange closes channels
       try { await self.supa.auth.signOut(); } catch (e) {}
       self.user = null;
       self._notify();
@@ -109,12 +107,11 @@
     initSync: function (config) {
       var self = this;
       if (!config || !config.appKey) return;
-      if (!self._booted) {
-        // Not booted yet — queue for later
-        self._configs.push(config);
-        return;
+      // Always register the config so _doPush and _flushNow can find it
+      self._configs.push(config);
+      if (self._booted) {
+        self._activateSync(config);
       }
-      self._activateSync(config);
     },
 
     _activateSync: function (config) {
@@ -125,24 +122,36 @@
       var onApplied = config.onApplied;
       var transformPush = config.transformPush;
 
-      // Set up localStorage monkey-patch (once)
+      // Guard against double-activation (e.g. onAuthStateChange + boot)
+      if (self._activated[appKey]) return;
+      self._activated[appKey] = true;
+
+      // Track what this config owns (for monkey-patch + cross-tab events)
+      self._matched[appKey] = { keys: syncedKeys, prefixes: syncedPrefixes };
+
+      // Set up localStorage monkey-patch (once) — checks ALL configs
       if (!self._origSet) {
         self._origSet = localStorage.setItem.bind(localStorage);
         self._origRemove = localStorage.removeItem.bind(localStorage);
-        var selfRef = self;
         localStorage.setItem = function (k, v) {
-          selfRef._origSet(k, v);
+          self._origSet(k, v);
           try {
-            if (!selfRef._suppress && selfRef._matchesAny(k, syncedKeys, syncedPrefixes) && isAllowed(k) && selfRef.user) {
-              selfRef._schedulePush(appKey);
+            if (!self._suppress && isAllowed(k) && self.user) {
+              var apps = self._matchingAppKeys(k);
+              for (var i = 0; i < apps.length; i++) {
+                self._schedulePush(apps[i]);
+              }
             }
           } catch (e) {}
         };
         localStorage.removeItem = function (k) {
-          selfRef._origRemove(k);
+          self._origRemove(k);
           try {
-            if (!selfRef._suppress && selfRef._matchesAny(k, syncedKeys, syncedPrefixes) && isAllowed(k) && selfRef.user) {
-              selfRef._schedulePush(appKey);
+            if (!self._suppress && isAllowed(k) && self.user) {
+              var apps = self._matchingAppKeys(k);
+              for (var i = 0; i < apps.length; i++) {
+                self._schedulePush(apps[i]);
+              }
             }
           } catch (e) {}
         };
@@ -151,22 +160,35 @@
       // Do initial pull & subscribe
       self._initPull(appKey, syncedKeys, syncedPrefixes, onApplied, transformPush);
 
-      // Subscribe to storage events from other tabs
+      // Subscribe to storage events from other tabs (once)
       if (!self._storageListener) {
         self._storageListener = function (e) {
-          if (e.key && self._isMatched(e.key)) {
-            self._schedulePush(appKey);
+          if (e.key) {
+            var apps = self._matchingAppKeys(e.key);
+            for (var i = 0; i < apps.length; i++) {
+              self._schedulePush(apps[i]);
+            }
           }
         };
         window.addEventListener('storage', self._storageListener);
       }
 
-      // Flush on page unload
+      // Flush on page unload (once — iterates all configs)
       if (!self._flushBound) {
-        self._flushBound = function () { self._flushNow(transformPush); };
+        self._flushBound = function () { self._flushNow(); };
         window.addEventListener('beforeunload', self._flushBound);
         window.addEventListener('pagehide', self._flushBound);
       }
+    },
+
+    // Find which appKeys' configs match the given localStorage key
+    _matchingAppKeys: function (k) {
+      var out = [];
+      for (var ak in this._matched) {
+        var m = this._matched[ak];
+        if (this._matchesAny(k, m.keys, m.prefixes)) out.push(ak);
+      }
+      return out;
     },
 
     _matchesAny: function (k, keys, prefixes) {
@@ -212,9 +234,6 @@
     _initPull: function (appKey, syncedKeys, syncedPrefixes, onApplied, transformPush) {
       var self = this;
       if (!self.supa || !self.user) return;
-
-      // Track what this config owns (for cross-tab storage events)
-      self._matched[appKey] = { keys: syncedKeys, prefixes: syncedPrefixes };
 
       (async function () {
         try {
@@ -266,10 +285,6 @@
     _maybeInitialUpload: async function () {
       var self = this;
       if (!self.supa || !self.user) return;
-      // Only try once
-      if (self._triedInitialUpload) return;
-      self._triedInitialUpload = true;
-
       // Check if this account has any rows at all
       try {
         var { data, error } = await self.supa
@@ -387,7 +402,7 @@
       } catch (e) {}
     },
 
-    _flushNow: function (transformPush) {
+    _flushNow: function () {
       var self = this;
       if (!self.supa || !self.user) return;
 
