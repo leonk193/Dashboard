@@ -344,6 +344,10 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
   animation: spin 0.6s linear infinite;
 }
 @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+@keyframes scanLine {
+  0%, 100% { transform: translateY(0); opacity: 0.3; }
+  50% { transform: translateY(60px); opacity: 1; }
+}
 .search-spinner.visible { display: block; }
 
 .search-hint {
@@ -1096,38 +1100,88 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
   <!-- ===== Scan Pane ===== -->
   <div class="tab-pane" id="scan-pane" role="tabpanel">
     <div class="card">
-      <div class="scan-layout">
-        <div class="scan-icon-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
-            <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
-            <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
-            <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
-            <path d="M7 12h10"/>
-            <path d="M12 7v10"/>
-          </svg>
-        </div>
-        <div class="scan-title">AI Meal Scanner</div>
-        <div class="scan-desc">
-          Take a photo of your meal or scan a barcode to get instant nutrition data. AI analyzes the image and returns calories, protein, carbs, and fat — no typing required.
-        </div>
-        <div class="scan-features">
-          <div class="scan-feature">
-            <div class="scan-feature-icon barcode">📷</div>
-            <div>
-              <strong>Snap a photo</strong><br>
-              Take a picture of your meal and AI identifies the food + portion size
-            </div>
+      <!-- Camera Region -->
+      <div id="scannerRegion">
+        <div id="scannerViewport" style="position:relative;width:100%;max-width:400px;margin:0 auto 16px;border-radius:14px;overflow:hidden;background:var(--bg-secondary);aspect-ratio:4/3;">
+          <div id="scannerPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-tertiary);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+              <path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+              <path d="M7 12h10"/><path d="M12 7v10"/>
+            </svg>
+            <span style="font-size:14px;font-weight:600;">Camera ready to scan</span>
           </div>
-          <div class="scan-feature">
-            <div class="scan-feature-icon photo">📦</div>
-            <div>
-              <strong>Scan barcodes</strong><br>
-              Scan packaged food barcodes to pull macros from the USDA database
-            </div>
+          <div id="scannerOverlay" style="display:none;position:absolute;inset:0;z-index:2;pointer-events:none;">
+            <!-- Scan guide brackets -->
+            <svg viewBox="0 0 100 100" style="width:70%;height:auto;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+              <path d="M20 8H8v12" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M80 8h12v12" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M20 92H8V80" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M80 92h12V80" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            <!-- Scan line -->
+            <div style="position:absolute;top:40%;left:15%;right:15%;height:2px;background:linear-gradient(90deg,transparent,rgba(91,141,239,0.9),transparent);animation:scanLine 2s ease-in-out infinite;box-shadow:0 0 8px rgba(91,141,239,0.5);"></div>
+          </div>
+          <div id="scannerSpinner" style="display:none;position:absolute;inset:0;z-index:3;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+            <div style="width:28px;height:28px;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--text-primary);border-radius:50%;animation:spin 0.6s linear infinite;"></div>
           </div>
         </div>
-        <div class="scan-badge">Coming Soon</div>
+        <div id="scanControls" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;">
+          <button class="submit-btn" id="startScanner" type="button" style="width:auto;padding:12px 24px;">Start Camera</button>
+          <button class="submit-btn secondary" id="stopScanner" type="button" style="display:none;width:auto;padding:12px 24px;">Stop Camera</button>
+        </div>
+      </div>
+
+      <!-- Manual barcode input -->
+      <div id="manualBarcodeRegion" style="margin-bottom:16px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="manualBarcode" placeholder="Type barcode number (EAN-13)" style="flex:1;min-width:0;font-family:var(--font-mono);" autocomplete="off">
+          <button class="submit-btn secondary" id="lookupBarcodeBtn" type="button" style="width:auto;padding:12px 20px;white-space:nowrap;">Look Up</button>
+        </div>
+        <div style="text-align:center;margin-top:6px;">
+          <button id="toggleManualBarcode" type="button" style="background:none;border:none;color:var(--text-tertiary);font-size:12px;cursor:pointer;padding:4px;">⌨️ Type barcode instead</button>
+        </div>
+      </div>
+
+      <!-- Scan status -->
+      <div id="scanStatus" class="form-status" style="margin-bottom:12px;min-height:20px;"></div>
+
+      <!-- Scan result (barcode found) -->
+      <div id="scanResultSection" style="display:none">
+        <!-- Selected food card -->
+        <div class="selected-food">
+          <div class="selected-food-info">
+            <div class="selected-food-name" id="scanResultName">Product</div>
+            <div class="selected-food-source" id="scanResultSource">Open Food Facts</div>
+          </div>
+          <button class="selected-food-clear" id="scanResultClear" aria-label="Clear scan result">✕</button>
+        </div>
+
+        <!-- Serving adjust -->
+        <div class="serving-adjust">
+          <label class="field-label">How many grams?</label>
+          <div class="serving-row" style="margin-bottom:10px;">
+            <input class="num" type="number" id="scanServingGrams" min="1" value="100" step="5">
+            <span class="serving-preset" data-grams="25">25g</span>
+            <span class="serving-preset" data-grams="50">50g</span>
+            <span class="serving-preset" data-grams="100">100g</span>
+            <span class="serving-preset" data-grams="150">150g</span>
+            <span class="serving-preset" data-grams="200">200g</span>
+            <span class="serving-preset" data-grams="300">300g</span>
+          </div>
+        </div>
+
+        <!-- Macro display -->
+        <div class="macro-display-auto" id="scanMacroDisplay">
+          <div class="macro-auto macro-auto-cal"><span class="macro-auto-val" id="scanMacCal">0</span> cal</div>
+          <div class="macro-auto macro-auto-protein"><span class="macro-auto-val" id="scanMacProtein">0</span>g protein</div>
+          <div class="macro-auto macro-auto-carbs"><span class="macro-auto-val" id="scanMacCarbs">0</span>g carbs</div>
+          <div class="macro-auto macro-auto-fat"><span class="macro-auto-val" id="scanMacFat">0</span>g fat</div>
+        </div>
+
+        <!-- Buttons -->
+        <button class="submit-btn" id="logScannedBtn">Log Meal</button>
+        <button class="submit-btn secondary" id="scanAnotherBtn" type="button" style="margin-top:8px;">Scan Another</button>
       </div>
     </div>
   </div>
