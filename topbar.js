@@ -90,10 +90,26 @@
   transition: background 0.15s;
 }
 .topbar-finance-btn:hover { background: rgba(255, 255, 255, 0.08); }
-.topbar-finance-icon {
+.topbar-auth-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.topbar-auth-btn:hover { background: rgba(255, 255, 255, 0.08); }
+.topbar-auth-btn.logged-in { background: rgba(125, 211, 252, 0.12); border-color: rgba(125, 211, 252, 0.3); }
+.topbar-auth-icon {
   font-size: 20px; line-height: 1;
   filter: grayscale(100%) brightness(1.4);
   opacity: 0.85;
+}
+.topbar-auth-btn.logged-in .topbar-auth-icon {
+  filter: none; opacity: 1;
 }
 
 /* Bottom tab bar — Instagram-style */
@@ -144,6 +160,7 @@ body.has-bottombar {
   .topbar-water-add { width: 40px; font-size: 18px; }
   .topbar-finance-btn { width: 40px; height: 38px; }
   .topbar-finance-icon { font-size: 18px; }
+  .topbar-auth-btn { width: 40px; height: 38px; }
   .bottombar-tab-icon { font-size: 22px; }
   .bottombar-tab { font-size: 10px; }
 }
@@ -207,6 +224,9 @@ body.topbar-modal-open {
   <a href="finance.html" class="topbar-finance-btn" id="topbarFinance" aria-label="Finance">
     <span class="topbar-finance-icon">📊</span>
   </a>
+  <button class="topbar-auth-btn" id="topbarAuthBtn" type="button" title="Account">
+    <span class="topbar-auth-icon" id="topbarAuthIcon">🔐</span>
+  </button>
 </header>
 `;
 
@@ -271,6 +291,11 @@ body.topbar-modal-open {
       t.classList.toggle('active', t.getAttribute('data-page') === active);
     });
 
+    // Inject auth modal
+    const authWrap = document.createElement('div');
+    authWrap.innerHTML = authModalHtml.trim();
+    document.body.appendChild(authWrap.firstChild);
+
     // Reserve room above the fixed bottom bar so page content can scroll
     // past it without being hidden.
     document.body.classList.add('has-bottombar');
@@ -291,6 +316,31 @@ body.topbar-modal-open {
       String(d.getMonth() + 1).padStart(2, '0') + '-' +
       String(d.getDate()).padStart(2, '0');
   }
+
+  // -------- Auth modal HTML --------
+  const authModalHtml = `
+<div class="modal-bg" id="authModalBg" style="display:none">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span id="authModalTitle">Sign in</span>
+      <button class="modal-close" id="authModalClose" type="button">&#x2715;</button>
+    </div>
+    <div class="auth-form" style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <input type="email" id="authEmail" placeholder="Email" autocomplete="email" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;color:#FAFAFA;font-size:15px;outline:none;box-sizing:border-box">
+      <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:8px;color:#FAFAFA;font-size:15px;outline:none;box-sizing:border-box">
+      <div class="auth-actions" style="display:flex;gap:8px">
+        <button id="authSubmitBtn" type="button" style="flex:1;padding:10px;border:none;border-radius:8px;background:#7DD3FC;color:#0a0a0b;font-size:14px;font-weight:600;cursor:pointer">Sign in</button>
+        <button id="authToggleBtn" type="button" style="flex:1;padding:10px;border:1px solid rgba(255,255,255,0.10);border-radius:8px;background:transparent;color:#FAFAFA;font-size:14px;cursor:pointer">Create account</button>
+      </div>
+      <div id="authStatus" style="font-size:13px;color:rgba(255,255,255,0.6);text-align:center"></div>
+      <div id="authUserInfo" style="display:none;font-size:13px;color:rgba(255,255,255,0.8);text-align:center;padding:8px">
+        <div id="authUserEmail" style="margin-bottom:8px"></div>
+        <button id="authSignOutBtn" type="button" style="padding:8px 16px;border:1px solid rgba(239,68,68,0.4);border-radius:8px;background:transparent;color:#ef4444;font-size:13px;cursor:pointer">Sign out</button>
+      </div>
+    </div>
+  </div>
+</div>
+`;
 
   // -------- Read progress from localStorage --------
   function getGoalsProgress() {
@@ -462,6 +512,143 @@ body.topbar-modal-open {
     sync();
   }
 
+  // -------- Auth UI --------
+  function wireAuthUI() {
+    var authBtn = document.getElementById('topbarAuthBtn');
+    if (!authBtn) return;
+
+    var bg = document.getElementById('authModalBg');
+    var closeBtn = document.getElementById('authModalClose');
+    var title = document.getElementById('authModalTitle');
+    var emailInput = document.getElementById('authEmail');
+    var passInput = document.getElementById('authPassword');
+    var submitBtn = document.getElementById('authSubmitBtn');
+    var toggleBtn = document.getElementById('authToggleBtn');
+    var statusEl = document.getElementById('authStatus');
+    var userInfo = document.getElementById('authUserInfo');
+    var userEmail = document.getElementById('authUserEmail');
+    var signOutBtn = document.getElementById('authSignOutBtn');
+
+    var isSignUp = false; // true = create-account, false = sign-in
+
+    function showStatus(msg, isError) {
+      if (statusEl) {
+        statusEl.textContent = msg;
+        statusEl.style.color = isError ? '#ef4444' : 'rgba(255,255,255,0.6)';
+      }
+    }
+
+    function updateAuthUI(user) {
+      if (!authBtn || !bg) return;
+      if (user) {
+        authBtn.classList.add('logged-in');
+        if (userEmail) userEmail.textContent = user.email || 'Signed in';
+        if (userInfo) userInfo.style.display = 'block';
+        if (bg) bg.style.display = 'none';
+        showStatus('', false);
+      } else {
+        authBtn.classList.remove('logged-in');
+        if (userInfo) userInfo.style.display = 'none';
+      }
+    }
+
+    // Initial state
+    if (window.auth && window.auth.user) {
+      updateAuthUI(window.auth.user);
+    }
+
+    // Listen for auth changes
+    if (window.auth && window.auth.onAuthChange) {
+      window.auth.onAuthChange(function (user) {
+        updateAuthUI(user);
+      });
+    }
+
+    // Open modal
+    authBtn.addEventListener('click', function () {
+      if (bg) {
+        bg.style.display = '';
+        if (window.auth && window.auth.user && userInfo) {
+          userInfo.style.display = 'block';
+          if (userEmail) userEmail.textContent = window.auth.user.email || 'Signed in';
+        }
+      }
+    });
+
+    // Close modal helpers
+    function closeModal() {
+      if (bg) bg.style.display = 'none';
+      if (passInput) passInput.value = '';
+      showStatus('', false);
+    }
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (bg) bg.addEventListener('click', function (e) {
+      if (e.target === bg) closeModal();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && bg && bg.style.display !== 'none') closeModal();
+    });
+
+    // Toggle sign-in / create-account
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', function () {
+        isSignUp = !isSignUp;
+        if (title) title.textContent = isSignUp ? 'Create account' : 'Sign in';
+        if (submitBtn) submitBtn.textContent = isSignUp ? 'Create account' : 'Sign in';
+        if (toggleBtn) toggleBtn.textContent = isSignUp ? 'Sign in instead' : 'Create account';
+        showStatus('', false);
+      });
+    }
+
+    // Submit
+    if (submitBtn) {
+      submitBtn.addEventListener('click', async function () {
+        var email = emailInput ? emailInput.value.trim() : '';
+        var pass = passInput ? passInput.value : '';
+        if (!email || !pass) {
+          showStatus('Please enter email and password', true);
+          return;
+        }
+        showStatus('Working...', false);
+        if (!window.auth) {
+          showStatus('Auth not available', true);
+          return;
+        }
+        try {
+          var result;
+          if (isSignUp) {
+            result = await window.auth.signUp(email, pass);
+          } else {
+            result = await window.auth.signIn(email, pass);
+          }
+          if (result && result.error) {
+            showStatus(result.error.message || 'Error', true);
+          } else {
+            showStatus(isSignUp ? 'Account created! You can now sign in.' : 'Signed in!', false);
+            if (passInput) passInput.value = '';
+            if (!isSignUp) {
+              // Sign-in succeeded — close modal after brief delay
+              setTimeout(closeModal, 800);
+            }
+          }
+        } catch (e) {
+          showStatus('Connection error', true);
+        }
+      });
+    }
+
+    // Sign out
+    if (signOutBtn) {
+      signOutBtn.addEventListener('click', function () {
+        var a = window.auth;
+        if (a && a.signOut) {
+          a.signOut();
+          closeModal();
+        }
+      });
+    }
+  }
+
   // -------- Boot --------
   function boot() {
     injectStyleAndHTML();
@@ -470,6 +657,7 @@ body.topbar-modal-open {
     render();
     lockGestures();
     startModalLock();
+    wireAuthUI();
 
     // Re-render when localStorage changes from another tab/window OR when
     // the page becomes visible (sync may have pulled in the background).
