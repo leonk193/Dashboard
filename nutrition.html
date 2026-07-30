@@ -10,6 +10,7 @@
 <title>Nutrition — Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="sync.js" defer></script>
+<script src="auth-sync.js" defer></script>
 <script src="topbar.js" defer></script>
 <style>
 :root {
@@ -2084,6 +2085,21 @@ if (typeof initCloudSync === 'function') {
     onApplied: function() { refreshUI(); }
   });
 }
+
+/* ===== Authenticated Cloud Sync ===== */
+(function () {
+  if (typeof window.auth === 'undefined' || !window.auth) return;
+  var wfa = setInterval(function () {
+    if (window.auth && window.auth.ready) {
+      clearInterval(wfa);
+      window.auth.initSync({
+        appKey: 'nutrition',
+        syncedKeys: [KEYS.profile, KEYS.targets, KEYS.meals],
+        onApplied: function() { refreshUI(); }
+      });
+    }
+  }, 100);
+})();
 
 // Re-render rings on toggle to pick up stroke-dashoffset animation
 document.querySelectorAll('[data-tab]').forEach(btn => {

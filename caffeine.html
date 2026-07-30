@@ -10,6 +10,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="sync.js" defer></script>
+<script src="auth-sync.js" defer></script>
 <script src="topbar.js" defer></script>
 
 <style>
@@ -666,6 +667,18 @@ body::after {
     window.initCloudSync({ appKey:'caffeine', syncedKeys:[LOGS_KEY,CUSTOM_KEY],
       onApplied:function(){ logs=loadJSON(LOGS_KEY,[]); custom=loadJSON(CUSTOM_KEY,[]); renderResults($('search').value); renderAll(); } });
   }
+
+  /* ===== Authenticated Cloud Sync ===== */
+  (function () {
+    if (typeof window.auth === 'undefined' || !window.auth) return;
+    var wfa = setInterval(function () {
+      if (window.auth && window.auth.ready) {
+        clearInterval(wfa);
+        window.auth.initSync({ appKey:'caffeine', syncedKeys:[LOGS_KEY,CUSTOM_KEY],
+          onApplied:function(){ logs=loadJSON(LOGS_KEY,[]); custom=loadJSON(CUSTOM_KEY,[]); renderResults($('search').value); renderAll(); } });
+      }
+    }, 100);
+  })();
 })();
 </script>
 </body>

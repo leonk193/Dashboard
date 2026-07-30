@@ -10,6 +10,7 @@
 <title>Finances</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="sync.js" defer></script>
+<script src="auth-sync.js" defer></script>
 <script src="topbar.js" defer></script>
 <style>
 :root {
@@ -4052,6 +4053,22 @@ document.addEventListener('DOMContentLoaded', function () {
       window.dispatchEvent(new Event('storage'));
     }
   });
+  (function () {
+    if (typeof window.auth === 'undefined' || !window.auth) return;
+    var wfa = setInterval(function () {
+      if (window.auth && window.auth.ready) {
+        clearInterval(wfa);
+        window.auth.initSync({
+          appKey: 'finance',
+          syncedKeys: ['subs', 'wishlist', 'incoming_orders', 'nw_currency', 'nw:activity', 'nw:history'],
+          syncedPrefixes: ['nw:'],
+          onApplied: function () {
+            window.dispatchEvent(new Event('storage'));
+          }
+        });
+      }
+    }, 100);
+  })();
 });
 </script>
 

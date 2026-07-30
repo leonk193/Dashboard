@@ -26,6 +26,7 @@
 <!-- Shared dashboard scripts. Keep these in this order. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="sync.js" defer></script>     <!-- cloud sync across devices -->
+<script src="auth-sync.js" defer></script>
 <script src="topbar.js" defer></script>   <!-- top water bar + bottom tab nav -->
 
 <style>
@@ -470,6 +471,21 @@ body::after {
       onApplied: render
     });
   }
+
+  // Authenticated sync
+  (function () {
+    if (typeof window.auth === 'undefined' || !window.auth) return;
+    var wfa = setInterval(function () {
+      if (window.auth && window.auth.ready) {
+        clearInterval(wfa);
+        window.auth.initSync({
+          appKey: 'template',
+          syncedKeys: [STORE_KEY],
+          onApplied: render
+        });
+      }
+    }, 100);
+  })();
 })();
 </script>
 

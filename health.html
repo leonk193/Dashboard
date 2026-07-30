@@ -10,6 +10,7 @@
 <title>Daily Stack — Customizable Template</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="sync.js" defer></script>
+<script src="auth-sync.js" defer></script>
 <script src="topbar.js" defer></script>
 <style>
 :root {
@@ -1466,6 +1467,25 @@ document.addEventListener('DOMContentLoaded', function () {
       window.dispatchEvent(new Event('storage'));
     }
   });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof window.auth === 'undefined' || !window.auth) return;
+  var wfa = setInterval(function () {
+    if (window.auth && window.auth.ready) {
+      clearInterval(wfa);
+      window.auth.initSync({
+        appKey: 'health',
+        syncedKeys: ['stack:items', 'stack:version', 'stack:low', 'po_water_v1'],
+        syncedPrefixes: ['stack:taken:'],
+        onApplied: function () {
+          window.dispatchEvent(new Event('storage'));
+        }
+      });
+    }
+  }, 100);
 });
 </script>
 
