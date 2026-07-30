@@ -111,6 +111,21 @@
 .topbar-auth-btn.logged-in .topbar-auth-icon {
   filter: none; opacity: 1;
 }
+/* Auth modal overlay (reuses modal-bg/modal classes from pages that define them) */
+#authModalBg {
+  position: fixed; inset: 0; z-index: 120; display: none;
+  align-items: center; justify-content: center; padding: 20px;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+#authModalBg.show { display: flex; }
+#authModalBg .modal {
+  width: 100%; max-width: 380px; max-height: 88vh; overflow-y: auto;
+  background: #0e0e10; border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px; padding: 22px; box-shadow: 0 24px 70px rgba(0,0,0,0.6);
+}
+#authModalBg .modal .modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
 
 /* Bottom tab bar — Instagram-style */
 .bottombar {
@@ -567,7 +582,7 @@ body.topbar-modal-open {
     // Open modal
     authBtn.addEventListener('click', function () {
       if (bg) {
-        bg.style.display = '';
+        bg.style.display = 'flex';
         if (window.auth && window.auth.user && userInfo) {
           userInfo.style.display = 'block';
           if (userEmail) userEmail.textContent = window.auth.user.email || 'Signed in';
