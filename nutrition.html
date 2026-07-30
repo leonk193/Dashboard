@@ -1503,13 +1503,11 @@ async function startScanner() {
   try {
     html5QrCode = new Html5Qrcode('scannerViewport');
 
-    // Scan full frame — no qrbox restriction so any barcode in view is detected
+    // Let native BarcodeDetector auto-detect EAN-13/8 without restricting formats.
+    // When BarcodeDetector is unavailable, falls back to the built-in JS decoder.
     const scanConfig = {
-      fps: 15,
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-      ],
+      fps: 10,
+      useBarCodeDetectorIfSupported: true,
     };
 
     await html5QrCode.start(
