@@ -122,10 +122,6 @@
       var onApplied = config.onApplied;
       var transformPush = config.transformPush;
 
-      // Guard against double-activation (e.g. onAuthStateChange + boot)
-      if (self._activated[appKey]) return;
-      self._activated[appKey] = true;
-
       // Track what this config owns (for monkey-patch + cross-tab events)
       self._matched[appKey] = { keys: syncedKeys, prefixes: syncedPrefixes };
 
@@ -260,9 +256,13 @@
           await self._maybeInitialUpload();
         } catch (e) {}
 
-        // Subscribe to realtime
+        // Subscribe to realtime (skip if channel already exists for this appKey+user)
         try {
-          var channel = self.supa.channel('user_state_' + appKey + '_' + self.user.id)
+          var channelName = 'user_state_' + appKey + '_' + self.user.id;
+          for (var ci = 0; ci < self._channels.length; ci++) {
+            if (self._channels[ci].topic === channelName) return;
+          }
+          var channel = self.supa.channel(channelName)
             .on('postgres_changes', {
               event: '*',
               schema: 'public',
