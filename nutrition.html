@@ -1102,8 +1102,8 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
   <div class="tab-pane" id="scan-pane" role="tabpanel">
     <div class="card">
       <!-- Camera Region -->
-      <div id="scannerRegion">
-        <div id="scannerViewport" style="position:relative;width:100%;max-width:400px;margin:0 auto 16px;border-radius:14px;overflow:hidden;background:var(--bg-secondary);aspect-ratio:4/3;">
+      <div id="scannerRegion" style="position:relative;">
+        <div id="scannerViewport" style="width:100%;max-width:400px;margin:0 auto 16px;border-radius:14px;overflow:hidden;background:var(--bg-secondary);aspect-ratio:4/3;">
           <div id="scannerPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-tertiary);">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>
@@ -1112,20 +1112,19 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
             </svg>
             <span style="font-size:14px;font-weight:600;">Camera ready to scan</span>
           </div>
-          <div id="scannerOverlay" style="display:none;position:absolute;inset:0;z-index:2;pointer-events:none;">
-            <!-- Scan guide brackets -->
-            <svg viewBox="0 0 100 100" style="width:70%;height:auto;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
-              <path d="M20 8H8v12" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
-              <path d="M80 8h12v12" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
-              <path d="M20 92H8V80" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
-              <path d="M80 92h12V80" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
-            </svg>
-            <!-- Scan line -->
-            <div style="position:absolute;top:40%;left:15%;right:15%;height:2px;background:linear-gradient(90deg,transparent,rgba(91,141,239,0.9),transparent);animation:scanLine 2s ease-in-out infinite;box-shadow:0 0 8px rgba(91,141,239,0.5);"></div>
-          </div>
-          <div id="scannerSpinner" style="display:none;position:absolute;inset:0;z-index:3;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
-            <div style="width:28px;height:28px;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--text-primary);border-radius:50%;animation:spin 0.6s linear infinite;"></div>
-          </div>
+        </div>
+        <!-- These sit OUTSIDE scannerViewport so Html5Qrcode doesn't destroy them -->
+        <div id="scannerOverlay" style="display:none;position:absolute;top:0;left:0;right:0;margin:0 auto;max-width:400px;aspect-ratio:4/3;z-index:10;pointer-events:none;">
+          <svg viewBox="0 0 100 100" style="width:70%;height:auto;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+            <path d="M20 8H8v12" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M80 8h12v12" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M20 92H8V80" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M80 92h12V80" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          <div style="position:absolute;top:40%;left:15%;right:15%;height:2px;background:linear-gradient(90deg,transparent,rgba(91,141,239,0.9),transparent);animation:scanLine 2s ease-in-out infinite;box-shadow:0 0 8px rgba(91,141,239,0.5);"></div>
+        </div>
+        <div id="scannerSpinner" style="display:none;position:absolute;top:0;left:0;right:0;margin:0 auto;max-width:400px;aspect-ratio:4/3;z-index:11;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+          <div style="width:28px;height:28px;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--text-primary);border-radius:50%;animation:spin 0.6s linear infinite;"></div>
         </div>
         <div id="scanControls" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;">
           <button class="submit-btn" id="startScanner" type="button" style="width:auto;padding:12px 24px;">Start Camera</button>
@@ -1586,9 +1585,13 @@ function stopScanner() {
   } catch (e) {}
   html5QrCode = null;
   scannerRunning = false;
-  document.getElementById('scannerOverlay').style.display = 'none';
-  document.getElementById('startScanner').style.display = 'inline-flex';
-  document.getElementById('stopScanner').style.display = 'none';
+  var el;
+  el = document.getElementById('scannerOverlay');
+  if (el) el.style.display = 'none';
+  el = document.getElementById('startScanner');
+  if (el) el.style.display = 'inline-flex';
+  el = document.getElementById('stopScanner');
+  if (el) el.style.display = 'none';
 }
 
 async function onScanSuccess(decodedText, decodedResult) {
