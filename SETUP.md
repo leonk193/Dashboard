@@ -40,6 +40,44 @@ create policy "anon full access app_state"
 alter publication supabase_realtime add table public.app_state;
 ```
 
+### 2a. Authenticated Sync (optional but recommended)
+
+For personal private sync, the dashboard can use **Supabase Auth** with an email and password.
+Row-level security ensures that only your account can read and write its synced data.
+
+Before running the SQL below, turn off email confirmation in Supabase Dashboard →
+**Authentication → Settings → Confirm email**.
+
+Run this block in **SQL Editor → New query → Run**:
+
+```sql
+-- Authenticated, per-user sync table (replaces anonymous app_state)
+create table if not exists public.user_app_state (
+  user_id    uuid        not null references auth.users(id) on delete cascade,
+  key        text        not null,
+  data       jsonb       not null,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, key)
+);
+
+alter table public.user_app_state enable row level security;
+
+create policy "Users manage own state"
+  on public.user_app_state
+  for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- Realtime for cross-device sync (scoped by RLS)
+alter publication supabase_realtime add table public.user_app_state;
+```
+
+The existing anonymous `app_state` table and policies remain unchanged. You can keep them
+or drop them later if you no longer need anonymous sync.
+
+After this setup, create an account with your email and password in the dashboard login modal
+that appears in the topbar.
+
 ### SQL #2 — progress-photo sync (Storage bucket)
 Progress photos upload to a Supabase **Storage** bucket called `progress-photos` (only the
 image URLs sync through `app_state`). Skip this if you don't need photos to sync across devices.
