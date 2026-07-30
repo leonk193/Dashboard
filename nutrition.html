@@ -1433,7 +1433,7 @@ let selectedFoodData = null; // { product, parsed: { per100: {cal, protein, carb
 let html5QrCode = null;
 let scannerRunning = false;
 let scannedFoodData = null;
-let isScanningMode = true;
+// let isScanningMode = true; // reserved for future scan/mode toggle
 
 async function searchFoodsOFF(query) {
   if (!query || query.length < 2) return [];
@@ -1586,6 +1586,11 @@ function displayScannedProduct(product) {
   document.getElementById('scanResultSource').textContent = `${parsed.brand} · Open Food Facts · ${parsed.servingSize}g per serving`;
   document.getElementById('scanServingGrams').value = parsed.servingSize;
   document.getElementById('scanResultSection').style.display = 'block';
+
+  // Highlight the matching serving-preset
+  document.querySelectorAll('#scanResultSection .serving-preset').forEach(sp => {
+    sp.classList.toggle('active', parseInt(sp.dataset.grams) === Math.round(parsed.servingSize));
+  });
 
   updateScanMacros(parsed.servingSize);
 }
