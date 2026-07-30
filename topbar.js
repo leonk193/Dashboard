@@ -440,6 +440,18 @@ body.topbar-modal-open {
   }
 
   async function pushWaterMergedToSupabase(localWater) {
+    // When authenticated, use auth-sync's supa to push directly to user_app_state.
+    // The monkey-patch won't catch this key on pages that don't register po_water_v1.
+    if (window.auth && window.auth.supa && window.auth.user) {
+      try {
+        await window.auth.supa.from('user_app_state').upsert(
+          { user_id: window.auth.user.id, key: 'health', data: { po_water_v1: localWater }, updated_at: new Date().toISOString() },
+          { onConflict: 'user_id,key' }
+        );
+      } catch (e) {}
+      return;
+    }
+
     // Only do this when we're NOT on the health page — health page
     // has its own sync that already detects the localStorage change.
     if (window.location.pathname.endsWith('/health.html') ||
