@@ -1509,9 +1509,25 @@ async function startScanner() {
 
   try {
     html5QrCode = new Html5Qrcode('scannerViewport');
+
+    // On Android Chrome use the native BarcodeDetector (much better EAN-13).
+    // Scan the full frame — no qrbox restriction so mobile viewport works.
+    const scanConfig = {
+      fps: 15,
+      useBarCodeDetectorIfSupported: true,
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.CODE_128,
+      ],
+    };
+
     await html5QrCode.start(
       { facingMode: 'environment' },
-      { fps: 15, qrbox: { width: 300, height: 150 } },
+      scanConfig,
       onScanSuccess,
       onScanFailure
     );
@@ -1520,7 +1536,7 @@ async function startScanner() {
     overlay.style.display = 'block';
     startBtn.style.display = 'none';
     stopBtn.style.display = 'inline-flex';
-    status.textContent = 'Point camera at a barcode';
+    status.textContent = 'Point camera at a barcode — move slowly to let the scanner focus';
     status.className = '';
   } catch (err) {
     console.warn('Camera start failed:', err);
