@@ -1146,9 +1146,6 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
       <!-- Scan status -->
       <div id="scanStatus" class="form-status" style="margin-bottom:8px;min-height:20px;"></div>
 
-      <!-- Debug log (visible on mobile — shows what the scanner is doing) -->
-      <div id="scanDebug" style="font-size:11px;color:var(--text-quaternary);font-family:var(--font-mono);max-height:100px;overflow-y:auto;margin-bottom:12px;padding:8px;background:rgba(0,0,0,0.2);border-radius:8px;display:none;white-space:pre-wrap;word-break:break-all;"></div>
-
       <!-- Scan result (barcode found) -->
       <div id="scanResultSection" style="display:none">
         <!-- Selected food card -->
@@ -1185,12 +1182,6 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
         <!-- Buttons -->
         <button class="submit-btn" id="logScannedBtn" type="button">Log Meal</button>
         <button class="submit-btn secondary" id="scanAnotherBtn" type="button" style="margin-top:8px;">Scan Another</button>
-      </div>
-
-      <!-- Debug toggle (mobile-friendly — no dev tools needed) -->
-      <div id="scanDebugWrap" style="margin-top:12px;display:none;">
-        <button id="toggleDebug" type="button" style="background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-quaternary);font-size:10px;cursor:pointer;padding:4px 10px;margin-bottom:4px;">🐛 Debug</button>
-        <div id="scanDebug" style="font-size:10px;line-height:1.5;color:var(--text-quaternary);font-family:var(--font-mono);max-height:120px;overflow-y:auto;padding:6px 8px;background:rgba(0,0,0,0.25);border-radius:6px;white-space:pre-wrap;word-break:break-all;"></div>
       </div>
     </div>
   </div>
@@ -1442,19 +1433,6 @@ let html5QrCode = null;
 let scannerRunning = false;
 let scannedFoodData = null;
 // let isScanningMode = true; // reserved for future scan/mode toggle
-let scanDebugCount = 0;
-
-/* On-screen debug log (useful on mobile with no dev tools) */
-function sd(msg) {
-  scanDebugCount++;
-  var el = document.getElementById('scanDebug');
-  var wrap = document.getElementById('scanDebugWrap');
-  if (el && wrap) {
-    wrap.style.display = 'block';
-    el.textContent += '[' + scanDebugCount + '] ' + msg + '\n';
-    el.scrollTop = el.scrollHeight;
-  }
-}
 
 async function searchFoodsOFF(query) {
   if (!query || query.length < 2) return [];
@@ -1524,33 +1502,29 @@ async function startScanner() {
   const stopBtn = document.getElementById('stopScanner');
   const status = document.getElementById('scanStatus');
 
-  sd('startScanner() called');
   status.textContent = 'Starting camera...';
   status.className = 'form-status';
   spinner.style.display = 'flex';
 
   try {
-    sd('Creating Html5Qrcode instance');
     html5QrCode = new Html5Qrcode('scannerViewport');
 
-    sd('Camera config prepared');
     const scanConfig = {
-      fps: 15,
-      qrbox: { width: 280, height: 120 },
+      fps: 20,
+      qrbox: { width: 320, height: 80 },
       formatsToSupport: [
         Html5QrcodeSupportedFormats.EAN_13,
         Html5QrcodeSupportedFormats.EAN_8,
       ],
+      aspectRatio: 4 / 3,
     };
 
-    sd('Calling html5QrCode.start() — waiting for camera permission');
     await html5QrCode.start(
       { facingMode: 'environment' },
       scanConfig,
       onScanSuccess,
       onScanFailure
     );
-    sd('html5QrCode.start() succeeded — camera is live');
     scannerRunning = true;
     placeholder.style.display = 'none';
     overlay.style.display = 'block';
@@ -1559,7 +1533,6 @@ async function startScanner() {
     status.textContent = 'Point camera at a barcode — move slowly to let the scanner focus';
     status.className = '';
   } catch (err) {
-    sd('Camera FAILED: ' + (err && err.message ? err.message : String(err)));
     console.warn('Camera start failed:', err);
     placeholder.innerHTML = `
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -1577,7 +1550,6 @@ async function startScanner() {
 }
 
 function stopScanner() {
-  sd('stopScanner() called');
   if (!scannerRunning || !html5QrCode) return;
   try {
     html5QrCode.stop();
@@ -1595,7 +1567,6 @@ function stopScanner() {
 }
 
 async function onScanSuccess(decodedText, decodedResult) {
-  sd('SCAN SUCCESS! Barcode: ' + decodedText);
   if (document.getElementById('scanResultSection').style.display !== 'none') return;
   stopScanner();
 
@@ -1605,15 +1576,12 @@ async function onScanSuccess(decodedText, decodedResult) {
 
   if (navigator.vibrate) navigator.vibrate(100);
 
-  sd('Looking up barcode ' + decodedText + ' on Open Food Facts...');
   const product = await lookupBarcodeOFF(decodedText);
   if (product) {
-    sd('Product found: ' + (product.product_name || 'unknown'));
     displayScannedProduct(product);
     status.textContent = '';
     status.className = '';
   } else {
-    sd('Product NOT FOUND in Open Food Facts');
     status.textContent = 'Product not found in Open Food Facts — try searching by name or Quick Add';
     status.className = 'form-status error';
     document.getElementById('startScanner').style.display = 'inline-flex';
@@ -1621,10 +1589,7 @@ async function onScanSuccess(decodedText, decodedResult) {
 }
 
 function onScanFailure(err) {
-  // Show the first few non-detection frames, then throttle
-  if (scanDebugCount < 20) {
-    sd('No code in frame yet' + (typeof err === 'string' ? ': ' + err.slice(0, 50) : ''));
-  }
+  // Fires on every non-detection frame — deliberately silent
 }
 
 function displayScannedProduct(product) {
