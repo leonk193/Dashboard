@@ -1472,7 +1472,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  if (typeof window.auth === 'undefined' || !window.auth) return;
   var wfa = setInterval(function () {
     if (window.auth && window.auth.ready) {
       clearInterval(wfa);

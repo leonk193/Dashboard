@@ -2088,7 +2088,6 @@ if (typeof initCloudSync === 'function') {
 
 /* ===== Authenticated Cloud Sync ===== */
 (function () {
-  if (typeof window.auth === 'undefined' || !window.auth) return;
   var wfa = setInterval(function () {
     if (window.auth && window.auth.ready) {
       clearInterval(wfa);
