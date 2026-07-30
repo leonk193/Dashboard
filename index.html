@@ -10,6 +10,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="sync.js" defer></script>
+<script src="auth-sync.js" defer></script>
 <script src="topbar.js" defer></script>
 
 <style>
@@ -580,6 +581,23 @@ body::after {
     $('whAction').textContent = 'Syncing…'; syncWhoop();
   });
 })();
+
+  /* ---------- Cloud sync for body profile ---------- */
+  (function () {
+    if (typeof window.auth === 'undefined' || !window.auth) return;
+    var waitForAuth = setInterval(function () {
+      if (window.auth && window.auth.ready) {
+        clearInterval(waitForAuth);
+        window.auth.initSync({
+          appKey: 'home',
+          syncedKeys: ['po_water_v1'],
+          onApplied: function () {
+            window.dispatchEvent(new Event('storage'));
+          }
+        });
+      }
+    }, 100);
+  })();
 </script>
 </body>
 </html>
