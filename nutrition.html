@@ -1148,7 +1148,7 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
           <input type="text" id="foodSearch" placeholder="Search foods..." autocomplete="off">
           <span class="search-spinner" id="searchSpinner"></span>
         </div>
-        <div class="search-hint" id="searchHint">Type a food name to search the USDA database</div>
+        <div class="search-hint" id="searchHint">Type a food name to search Open Food Facts</div>
         <div class="search-results" id="searchResults"></div>
 
         <!-- Selected food (hidden until selection) -->
@@ -1156,7 +1156,7 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
           <div class="selected-food">
             <div class="selected-food-info">
               <div class="selected-food-name" id="selFoodName">Food</div>
-              <div class="selected-food-source" id="selFoodSource">USDA</div>
+              <div class="selected-food-source" id="selFoodSource">Open Food Facts</div>
             </div>
             <button class="selected-food-clear" id="clearSelection" aria-label="Clear selection">✕</button>
           </div>
@@ -1366,59 +1366,48 @@ const FOOD_LIST = [
   'Black Beans', 'Blueberries', 'Mixed Greens Salad', 'Turkey Sandwich',
 ];
 
-/* ===== USDA API ===== */
-const USDA_API_KEY = 'DEMO_KEY'; // Get a free key at https://fdc.nal.usda.gov/api-key-signup.html
-const USDA_SEARCH_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
-
-// Nutrient IDs we care about
-const NUTRIENTS = { energy: 1008, protein: 1003, fat: 1004, carbs: 1005 };
+/* ===== Open Food Facts API ===== */
+const OFF_SEARCH_URL = 'https://world.openfoodfacts.org/cgi/search.pl';
+const OFF_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product';
 
 let searchTimeout = null;
-let lastSearchTime = 0;
 const SEARCH_CACHE = {};
-let selectedFoodData = null; // { per100g: {cal, protein, carbs, fat}, name, brand }
+let selectedFoodData = null; // { product, parsed: { per100: {cal, protein, carbs, fat}, name, brand, servingSize, barcode } }
 
-async function searchFoods(query) {
+async function searchFoodsOFF(query) {
   if (!query || query.length < 2) return [];
-  // Check cache first
   const cacheKey = query.toLowerCase().trim();
   if (SEARCH_CACHE[cacheKey] && Date.now() - SEARCH_CACHE[cacheKey].time < 120000) {
     return SEARCH_CACHE[cacheKey].data;
   }
-  // Rate-limit: at least 1.5s between requests for DEMO_KEY
-  const now = Date.now();
-  const wait = Math.max(0, 1500 - (now - lastSearchTime));
-  if (wait > 0) await new Promise(r => setTimeout(r, wait));
-  lastSearchTime = Date.now();
-  const url = `${USDA_SEARCH_URL}?api_key=${USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=8&dataType=Branded,SR Legacy,Foundation`;
+  const url = `${OFF_SEARCH_URL}?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=12&fields=product_name,brands,nutriments,serving_size,code`;
   try {
     const res = await fetch(url);
-    if (res.status === 429) throw new Error('rate_limited');
-    if (!res.ok) throw new Error('API error');
+    if (!res.ok) throw new Error('OFF API error');
     const data = await res.json();
-    const foods = data.foods || [];
-    SEARCH_CACHE[cacheKey] = { data: foods, time: Date.now() };
-    return foods;
+    const products = data.products || [];
+    SEARCH_CACHE[cacheKey] = { data: products, time: Date.now() };
+    return products;
   } catch (e) {
-    if (e.message === 'rate_limited') throw e;
-    console.warn('USDA search failed:', e);
+    console.warn('OFF search failed:', e);
     return [];
   }
 }
 
-function extractNutrientsPer100g(food) {
-  const sv = food.servingSize || 100;
-  const nutrients = {};
-  if (food.foodNutrients) {
-    for (const n of food.foodNutrients) {
-      const val = n.value || 0;
-      if (n.nutrientId === NUTRIENTS.energy) nutrients.calories = val / sv * 100;
-      if (n.nutrientId === NUTRIENTS.protein) nutrients.protein = val / sv * 100;
-      if (n.nutrientId === NUTRIENTS.fat) nutrients.fat = val / sv * 100;
-      if (n.nutrientId === NUTRIENTS.carbs) nutrients.carbs = val / sv * 100;
-    }
-  }
-  return nutrients;
+function parseOFFProduct(product) {
+  const nut = product.nutriments || {};
+  return {
+    per100: {
+      calories: nut['energy-kcal'] || 0,
+      protein: nut.proteins || 0,
+      carbs: nut.carbohydrates || 0,
+      fat: nut.fat || 0,
+    },
+    name: product.product_name || 'Unknown',
+    brand: product.brands || 'Open Food Facts',
+    servingSize: nut.serving_quantity || 100,
+    barcode: product.code || '',
+  };
 }
 
 function formatMacro(val) {
@@ -1723,14 +1712,10 @@ document.getElementById('foodSearch').addEventListener('input', function() {
   searchTimeout = setTimeout(async () => {
     let foods;
     try {
-      foods = await searchFoods(q);
+      foods = await searchFoodsOFF(q);
     } catch (e) {
       spinner.classList.remove('visible');
-      if (e.message === 'rate_limited') {
-        hint.textContent = 'Search rate limit reached. Please wait a moment and try again.';
-      } else {
-        hint.textContent = 'Search failed. Try again or use Quick Add.';
-      }
+      hint.textContent = 'Search failed. Try again or use Quick Add.';
       results.classList.remove('visible');
       return;
     }
@@ -1744,28 +1729,27 @@ document.getElementById('foodSearch').addEventListener('input', function() {
 
     hint.textContent = `Found ${foods.length} results`;
     results.innerHTML = foods.map(f => {
-      const per100 = extractNutrientsPer100g(f);
-      const sv = f.servingSize || 100;
-      const svText = f.servingSize ? `${sv}g` : 'per 100g';
+      const parsed = parseOFFProduct(f);
+      const svText = `${parsed.servingSize}g per serving`;
       return `<div class="search-result-item" data-idx="${foods.indexOf(f)}">
         <div class="sr-info">
-          <div class="sr-name">${escHtml(f.description || 'Unknown')}</div>
-          <div class="sr-brand">${escHtml(f.brandOwner || 'USDA')} · ${svText}</div>
+          <div class="sr-name">${escHtml(parsed.name)}</div>
+          <div class="sr-brand">${escHtml(parsed.brand)} · ${svText}</div>
         </div>
         <div class="sr-macros">
-          <span>${Math.round(per100.calories || 0)}cal</span>
-          <span>P${formatMacro(per100.protein || 0)}</span>
-          <span>C${formatMacro(per100.carbs || 0)}</span>
-          <span>F${formatMacro(per100.fat || 0)}</span>
+          <span>${Math.round(parsed.per100.calories || 0)}cal</span>
+          <span>P${formatMacro(parsed.per100.protein || 0)}</span>
+          <span>C${formatMacro(parsed.per100.carbs || 0)}</span>
+          <span>F${formatMacro(parsed.per100.fat || 0)}</span>
         </div>
         <div class="sr-arrow">→</div>
       </div>`;
     }).join('');
     results.classList.add('visible');
 
-    // Store per-100g data on each result row
+    // Store parsed data on each result row
     results.querySelectorAll('.search-result-item').forEach((el, i) => {
-      el._foodData = { food: foods[i], per100: extractNutrientsPer100g(foods[i]) };
+      el._foodData = { product: foods[i], parsed: parseOFFProduct(foods[i]) };
       el.addEventListener('click', function() {
         selectFood(this._foodData);
       });
@@ -1775,18 +1759,18 @@ document.getElementById('foodSearch').addEventListener('input', function() {
 
 function selectFood(foodData) {
   selectedFoodData = foodData;
-  const f = foodData.food;
-  const name = f.description || 'Unknown';
-  const brand = f.brandOwner || 'USDA';
+  const p = foodData.parsed;
+  const name = p.name;
+  const brand = p.brand;
 
   document.getElementById('selFoodName').textContent = name;
-  document.getElementById('selFoodSource').textContent = `${brand} · ${f.servingSize || 100}g per serving`;
+  document.getElementById('selFoodSource').textContent = `${brand} · Open Food Facts · ${p.servingSize}g per serving`;
   document.getElementById('selectedFoodSection').style.display = 'block';
   document.getElementById('searchResults').classList.remove('visible');
   document.getElementById('searchHint').textContent = `Selected: ${name}`;
 
   // Set portion defaults
-  const portionGrams = f.servingSize || 100;
+  const portionGrams = p.servingSize;
   selectedFoodData.portionSizeGrams = portionGrams;
   document.getElementById('portionSize').textContent = portionGrams;
   document.getElementById('portionCount').value = 1;
@@ -1816,7 +1800,7 @@ function updateFromGrams(grams) {
 
 function updateMacroDisplay(grams) {
   if (!selectedFoodData) return;
-  const p100 = selectedFoodData.per100;
+  const p100 = selectedFoodData.parsed.per100;
   const factor = grams / 100;
   const cal = Math.round((p100.calories || 0) * factor);
   const protein = Math.round((p100.protein || 0) * factor * 10) / 10;
@@ -1878,7 +1862,7 @@ document.getElementById('clearSelection').addEventListener('click', function() {
   document.getElementById('selectedFoodSection').style.display = 'none';
   document.getElementById('foodSearch').value = '';
   document.getElementById('foodSearch').focus();
-  document.getElementById('searchHint').textContent = 'Type a food name to search the USDA database';
+  document.getElementById('searchHint').textContent = 'Type a food name to search Open Food Facts';
 });
 
 // Log searched food
@@ -1887,7 +1871,7 @@ document.getElementById('logSearchedBtn').addEventListener('click', function() {
   const status = document.getElementById('searchStatus');
   const name = document.getElementById('selFoodName').textContent;
   const grams = parseFloat(document.getElementById('servingGrams').value) || 100;
-  const p100 = selectedFoodData.per100;
+  const p100 = selectedFoodData.parsed.per100;
   const factor = grams / 100;
   const cal = Math.round((p100.calories || 0) * factor);
   const protein = Math.round((p100.protein || 0) * factor * 10) / 10;
@@ -1906,7 +1890,7 @@ document.getElementById('logSearchedBtn').addEventListener('click', function() {
   selectedFoodData = null;
   document.getElementById('selectedFoodSection').style.display = 'none';
   document.getElementById('foodSearch').value = '';
-  document.getElementById('searchHint').textContent = 'Type a food name to search the USDA database';
+  document.getElementById('searchHint').textContent = 'Type a food name to search Open Food Facts';
 
   setTimeout(() => { status.textContent = ''; status.className = 'form-status'; }, 2500);
   if (document.querySelector('[data-tab="today"]')) refreshUI();
