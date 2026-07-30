@@ -1114,14 +1114,8 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
           </div>
         </div>
         <!-- These sit OUTSIDE scannerViewport so Html5Qrcode doesn't destroy them -->
-        <div id="scannerOverlay" style="display:none;position:absolute;top:0;left:0;right:0;margin:0 auto;max-width:400px;aspect-ratio:4/3;z-index:10;pointer-events:none;">
-          <svg viewBox="0 0 100 100" style="width:70%;height:auto;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
-            <path d="M20 8H8v12" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
-            <path d="M80 8h12v12" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
-            <path d="M20 92H8V80" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
-            <path d="M80 92h12V80" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
-          </svg>
-          <div style="position:absolute;top:40%;left:15%;right:15%;height:2px;background:linear-gradient(90deg,transparent,rgba(91,141,239,0.9),transparent);animation:scanLine 2s ease-in-out infinite;box-shadow:0 0 8px rgba(91,141,239,0.5);"></div>
+        <div id="scannerOverlay" style="display:none;position:absolute;top:0;left:0;right:0;margin:0 auto;max-width:400px;aspect-ratio:4/3;z-index:10;pointer-events:none;border:2px solid rgba(91,141,239,0.5);border-radius:14px;box-sizing:border-box;">
+          <div style="position:absolute;top:50%;left:15%;right:15%;height:2px;background:linear-gradient(90deg,transparent,rgba(91,141,239,0.9),transparent);animation:scanLine 1.5s ease-in-out infinite;"></div>
         </div>
         <div id="scannerSpinner" style="display:none;position:absolute;top:0;left:0;right:0;margin:0 auto;max-width:400px;aspect-ratio:4/3;z-index:11;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
           <div style="width:28px;height:28px;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--text-primary);border-radius:50%;animation:spin 0.6s linear infinite;"></div>
@@ -1509,14 +1503,13 @@ async function startScanner() {
   try {
     html5QrCode = new Html5Qrcode('scannerViewport');
 
+    // Scan full frame — no qrbox restriction so any barcode in view is detected
     const scanConfig = {
-      fps: 20,
-      qrbox: { width: 320, height: 80 },
+      fps: 15,
       formatsToSupport: [
         Html5QrcodeSupportedFormats.EAN_13,
         Html5QrcodeSupportedFormats.EAN_8,
       ],
-      aspectRatio: 4 / 3,
     };
 
     await html5QrCode.start(
