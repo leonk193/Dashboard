@@ -9,6 +9,7 @@
 <meta name="color-scheme" content="dark">
 <title>Nutrition — Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/dist/html5-qrcode.min.js"></script>
 <script src="sync.js" defer></script>
 <script src="auth-sync.js" defer></script>
 <script src="topbar.js" defer></script>
@@ -344,6 +345,10 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
   animation: spin 0.6s linear infinite;
 }
 @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+@keyframes scanLine {
+  0%, 100% { transform: translateY(0); opacity: 0.3; }
+  50% { transform: translateY(60px); opacity: 1; }
+}
 .search-spinner.visible { display: block; }
 
 .search-hint {
@@ -1096,38 +1101,88 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
   <!-- ===== Scan Pane ===== -->
   <div class="tab-pane" id="scan-pane" role="tabpanel">
     <div class="card">
-      <div class="scan-layout">
-        <div class="scan-icon-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
-            <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
-            <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
-            <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
-            <path d="M7 12h10"/>
-            <path d="M12 7v10"/>
-          </svg>
-        </div>
-        <div class="scan-title">AI Meal Scanner</div>
-        <div class="scan-desc">
-          Take a photo of your meal or scan a barcode to get instant nutrition data. AI analyzes the image and returns calories, protein, carbs, and fat — no typing required.
-        </div>
-        <div class="scan-features">
-          <div class="scan-feature">
-            <div class="scan-feature-icon barcode">📷</div>
-            <div>
-              <strong>Snap a photo</strong><br>
-              Take a picture of your meal and AI identifies the food + portion size
-            </div>
+      <!-- Camera Region -->
+      <div id="scannerRegion">
+        <div id="scannerViewport" style="position:relative;width:100%;max-width:400px;margin:0 auto 16px;border-radius:14px;overflow:hidden;background:var(--bg-secondary);aspect-ratio:4/3;">
+          <div id="scannerPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-tertiary);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+              <path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+              <path d="M7 12h10"/><path d="M12 7v10"/>
+            </svg>
+            <span style="font-size:14px;font-weight:600;">Camera ready to scan</span>
           </div>
-          <div class="scan-feature">
-            <div class="scan-feature-icon photo">📦</div>
-            <div>
-              <strong>Scan barcodes</strong><br>
-              Scan packaged food barcodes to pull macros from the USDA database
-            </div>
+          <div id="scannerOverlay" style="display:none;position:absolute;inset:0;z-index:2;pointer-events:none;">
+            <!-- Scan guide brackets -->
+            <svg viewBox="0 0 100 100" style="width:70%;height:auto;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+              <path d="M20 8H8v12" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M80 8h12v12" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M20 92H8V80" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M80 92h12V80" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            <!-- Scan line -->
+            <div style="position:absolute;top:40%;left:15%;right:15%;height:2px;background:linear-gradient(90deg,transparent,rgba(91,141,239,0.9),transparent);animation:scanLine 2s ease-in-out infinite;box-shadow:0 0 8px rgba(91,141,239,0.5);"></div>
+          </div>
+          <div id="scannerSpinner" style="display:none;position:absolute;inset:0;z-index:3;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+            <div style="width:28px;height:28px;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--text-primary);border-radius:50%;animation:spin 0.6s linear infinite;"></div>
           </div>
         </div>
-        <div class="scan-badge">Coming Soon</div>
+        <div id="scanControls" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;">
+          <button class="submit-btn" id="startScanner" type="button" style="width:auto;padding:12px 24px;">Start Camera</button>
+          <button class="submit-btn secondary" id="stopScanner" type="button" style="display:none;width:auto;padding:12px 24px;">Stop Camera</button>
+        </div>
+      </div>
+
+      <!-- Manual barcode input -->
+      <div id="manualBarcodeRegion" style="margin-bottom:16px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="manualBarcode" placeholder="Type barcode number (EAN-13)" style="flex:1;min-width:0;font-family:var(--font-mono);" autocomplete="off">
+          <button class="submit-btn secondary" id="lookupBarcodeBtn" type="button" style="width:auto;padding:12px 20px;white-space:nowrap;">Look Up</button>
+        </div>
+        <div style="text-align:center;margin-top:6px;">
+          <button id="toggleManualBarcode" type="button" style="background:none;border:none;color:var(--text-tertiary);font-size:12px;cursor:pointer;padding:4px;">⌨️ Type barcode instead</button>
+        </div>
+      </div>
+
+      <!-- Scan status -->
+      <div id="scanStatus" class="form-status" style="margin-bottom:12px;min-height:20px;"></div>
+
+      <!-- Scan result (barcode found) -->
+      <div id="scanResultSection" style="display:none">
+        <!-- Selected food card -->
+        <div class="selected-food">
+          <div class="selected-food-info">
+            <div class="selected-food-name" id="scanResultName">Product</div>
+            <div class="selected-food-source" id="scanResultSource">Open Food Facts</div>
+          </div>
+          <button class="selected-food-clear" id="scanResultClear" aria-label="Clear scan result">✕</button>
+        </div>
+
+        <!-- Serving adjust -->
+        <div class="serving-adjust">
+          <label class="field-label">How many grams?</label>
+          <div class="serving-row" style="margin-bottom:10px;">
+            <input class="num" type="number" id="scanServingGrams" min="1" value="100" step="5">
+            <span class="serving-preset" data-grams="25">25g</span>
+            <span class="serving-preset" data-grams="50">50g</span>
+            <span class="serving-preset" data-grams="100">100g</span>
+            <span class="serving-preset" data-grams="150">150g</span>
+            <span class="serving-preset" data-grams="200">200g</span>
+            <span class="serving-preset" data-grams="300">300g</span>
+          </div>
+        </div>
+
+        <!-- Macro display -->
+        <div class="macro-display-auto" id="scanMacroDisplay">
+          <div class="macro-auto macro-auto-cal"><span class="macro-auto-val" id="scanMacCal">0</span> cal</div>
+          <div class="macro-auto macro-auto-protein"><span class="macro-auto-val" id="scanMacProtein">0</span>g protein</div>
+          <div class="macro-auto macro-auto-carbs"><span class="macro-auto-val" id="scanMacCarbs">0</span>g carbs</div>
+          <div class="macro-auto macro-auto-fat"><span class="macro-auto-val" id="scanMacFat">0</span>g fat</div>
+        </div>
+
+        <!-- Buttons -->
+        <button class="submit-btn" id="logScannedBtn" type="button">Log Meal</button>
+        <button class="submit-btn secondary" id="scanAnotherBtn" type="button" style="margin-top:8px;">Scan Another</button>
       </div>
     </div>
   </div>
@@ -1148,7 +1203,7 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
           <input type="text" id="foodSearch" placeholder="Search foods..." autocomplete="off">
           <span class="search-spinner" id="searchSpinner"></span>
         </div>
-        <div class="search-hint" id="searchHint">Type a food name to search the USDA database</div>
+        <div class="search-hint" id="searchHint">Type a food name to search Open Food Facts</div>
         <div class="search-results" id="searchResults"></div>
 
         <!-- Selected food (hidden until selection) -->
@@ -1156,7 +1211,7 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
           <div class="selected-food">
             <div class="selected-food-info">
               <div class="selected-food-name" id="selFoodName">Food</div>
-              <div class="selected-food-source" id="selFoodSource">USDA</div>
+              <div class="selected-food-source" id="selFoodSource">Open Food Facts</div>
             </div>
             <button class="selected-food-clear" id="clearSelection" aria-label="Clear selection">✕</button>
           </div>
@@ -1366,63 +1421,188 @@ const FOOD_LIST = [
   'Black Beans', 'Blueberries', 'Mixed Greens Salad', 'Turkey Sandwich',
 ];
 
-/* ===== USDA API ===== */
-const USDA_API_KEY = 'DEMO_KEY'; // Get a free key at https://fdc.nal.usda.gov/api-key-signup.html
-const USDA_SEARCH_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
-
-// Nutrient IDs we care about
-const NUTRIENTS = { energy: 1008, protein: 1003, fat: 1004, carbs: 1005 };
+/* ===== Open Food Facts API ===== */
+const OFF_SEARCH_URL = 'https://world.openfoodfacts.org/cgi/search.pl';
+const OFF_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product';
 
 let searchTimeout = null;
-let lastSearchTime = 0;
 const SEARCH_CACHE = {};
-let selectedFoodData = null; // { per100g: {cal, protein, carbs, fat}, name, brand }
+let selectedFoodData = null; // { product, parsed: { per100: {cal, protein, carbs, fat}, name, brand, servingSize, barcode } }
 
-async function searchFoods(query) {
+/* ===== Barcode Scanner State ===== */
+let html5QrCode = null;
+let scannerRunning = false;
+let scannedFoodData = null;
+// let isScanningMode = true; // reserved for future scan/mode toggle
+
+async function searchFoodsOFF(query) {
   if (!query || query.length < 2) return [];
-  // Check cache first
   const cacheKey = query.toLowerCase().trim();
   if (SEARCH_CACHE[cacheKey] && Date.now() - SEARCH_CACHE[cacheKey].time < 120000) {
     return SEARCH_CACHE[cacheKey].data;
   }
-  // Rate-limit: at least 1.5s between requests for DEMO_KEY
-  const now = Date.now();
-  const wait = Math.max(0, 1500 - (now - lastSearchTime));
-  if (wait > 0) await new Promise(r => setTimeout(r, wait));
-  lastSearchTime = Date.now();
-  const url = `${USDA_SEARCH_URL}?api_key=${USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=8&dataType=Branded,SR Legacy,Foundation`;
+  const url = `${OFF_SEARCH_URL}?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=12&fields=product_name,brands,nutriments,serving_size,code`;
   try {
     const res = await fetch(url);
-    if (res.status === 429) throw new Error('rate_limited');
-    if (!res.ok) throw new Error('API error');
+    if (!res.ok) throw new Error('OFF API error');
     const data = await res.json();
-    const foods = data.foods || [];
-    SEARCH_CACHE[cacheKey] = { data: foods, time: Date.now() };
-    return foods;
+    const products = data.products || [];
+    SEARCH_CACHE[cacheKey] = { data: products, time: Date.now() };
+    return products;
   } catch (e) {
-    if (e.message === 'rate_limited') throw e;
-    console.warn('USDA search failed:', e);
+    console.warn('OFF search failed:', e);
     return [];
   }
 }
 
-function extractNutrientsPer100g(food) {
-  const sv = food.servingSize || 100;
-  const nutrients = {};
-  if (food.foodNutrients) {
-    for (const n of food.foodNutrients) {
-      const val = n.value || 0;
-      if (n.nutrientId === NUTRIENTS.energy) nutrients.calories = val / sv * 100;
-      if (n.nutrientId === NUTRIENTS.protein) nutrients.protein = val / sv * 100;
-      if (n.nutrientId === NUTRIENTS.fat) nutrients.fat = val / sv * 100;
-      if (n.nutrientId === NUTRIENTS.carbs) nutrients.carbs = val / sv * 100;
-    }
+async function lookupBarcodeOFF(barcode) {
+  const cacheKey = 'barcode:' + barcode.trim();
+  if (SEARCH_CACHE[cacheKey] && Date.now() - SEARCH_CACHE[cacheKey].time < 120000) {
+    return SEARCH_CACHE[cacheKey].data;
   }
-  return nutrients;
+  try {
+    const res = await fetch(`${OFF_PRODUCT_URL}/${encodeURIComponent(barcode.trim())}.json`);
+    if (!res.ok) throw new Error('Not found');
+    const data = await res.json();
+    if (data.status !== 1) throw new Error('Not found');
+    SEARCH_CACHE[cacheKey] = { data: data.product, time: Date.now() };
+    return data.product;
+  } catch (e) {
+    return null;
+  }
+}
+
+function parseOFFProduct(product) {
+  const nut = product.nutriments || {};
+  return {
+    per100: {
+      calories: nut['energy-kcal'] || 0,
+      protein: nut.proteins || 0,
+      carbs: nut.carbohydrates || 0,
+      fat: nut.fat || 0,
+    },
+    name: product.product_name || 'Unknown',
+    brand: product.brands || 'Open Food Facts',
+    servingSize: nut.serving_quantity || 100,
+    barcode: product.code || '',
+  };
 }
 
 function formatMacro(val) {
   return val < 10 ? val.toFixed(1) : Math.round(val);
+}
+
+/* ===== Barcode Scanner Functions ===== */
+async function startScanner() {
+  if (scannerRunning) return;
+  const viewport = document.getElementById('scannerViewport');
+  const placeholder = document.getElementById('scannerPlaceholder');
+  const overlay = document.getElementById('scannerOverlay');
+  const spinner = document.getElementById('scannerSpinner');
+  const startBtn = document.getElementById('startScanner');
+  const stopBtn = document.getElementById('stopScanner');
+  const status = document.getElementById('scanStatus');
+
+  status.textContent = 'Starting camera...';
+  status.className = 'form-status';
+  spinner.style.display = 'flex';
+
+  try {
+    html5QrCode = new Html5Qrcode('scannerViewport');
+    await html5QrCode.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 280, height: 140 }, formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E, Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.CODE_128 ] },
+      onScanSuccess,
+      onScanFailure
+    );
+    scannerRunning = true;
+    placeholder.style.display = 'none';
+    overlay.style.display = 'block';
+    startBtn.style.display = 'none';
+    stopBtn.style.display = 'inline-flex';
+    status.textContent = 'Point camera at a barcode';
+    status.className = '';
+  } catch (err) {
+    console.warn('Camera start failed:', err);
+    placeholder.innerHTML = `
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <span style="font-size:14px;font-weight:600;">Camera unavailable</span>
+      <span style="font-size:12px;color:var(--text-quaternary);">Permission denied or no camera found</span>
+    `;
+    status.textContent = 'Camera unavailable — type a barcode below';
+    status.className = 'form-status error';
+  } finally {
+    spinner.style.display = 'none';
+  }
+}
+
+function stopScanner() {
+  if (!scannerRunning || !html5QrCode) return;
+  try {
+    html5QrCode.stop();
+    html5QrCode.clear();
+  } catch (e) {}
+  html5QrCode = null;
+  scannerRunning = false;
+  document.getElementById('scannerOverlay').style.display = 'none';
+  document.getElementById('startScanner').style.display = 'inline-flex';
+  document.getElementById('stopScanner').style.display = 'none';
+}
+
+async function onScanSuccess(decodedText, decodedResult) {
+  if (document.getElementById('scanResultSection').style.display !== 'none') return;
+  stopScanner();
+
+  const status = document.getElementById('scanStatus');
+  status.textContent = `Barcode detected: ${decodedText}`;
+  status.className = '';
+
+  if (navigator.vibrate) navigator.vibrate(100);
+
+  const product = await lookupBarcodeOFF(decodedText);
+  if (product) {
+    displayScannedProduct(product);
+    status.textContent = '';
+    status.className = '';
+  } else {
+    status.textContent = 'Product not found in Open Food Facts — try searching by name or Quick Add';
+    status.className = 'form-status error';
+    document.getElementById('startScanner').style.display = 'inline-flex';
+  }
+}
+
+function onScanFailure(err) {
+  // Ignore — fires on every non-detection frame
+}
+
+function displayScannedProduct(product) {
+  const parsed = parseOFFProduct(product);
+  scannedFoodData = { product, parsed };
+
+  document.getElementById('scanResultName').textContent = parsed.name;
+  document.getElementById('scanResultSource').textContent = `${parsed.brand} · Open Food Facts · ${parsed.servingSize}g per serving`;
+  document.getElementById('scanServingGrams').value = parsed.servingSize;
+  document.getElementById('scanResultSection').style.display = 'block';
+
+  // Highlight the matching serving-preset
+  document.querySelectorAll('#scanResultSection .serving-preset').forEach(sp => {
+    sp.classList.toggle('active', parseInt(sp.dataset.grams) === Math.round(parsed.servingSize));
+  });
+
+  updateScanMacros(parsed.servingSize);
+}
+
+function updateScanMacros(grams) {
+  if (!scannedFoodData) return;
+  const p = scannedFoodData.parsed;
+  const factor = grams / 100;
+  document.getElementById('scanMacCal').textContent = Math.round((p.per100.calories || 0) * factor);
+  document.getElementById('scanMacProtein').textContent = Math.round((p.per100.protein || 0) * factor * 10) / 10;
+  document.getElementById('scanMacCarbs').textContent = Math.round((p.per100.carbs || 0) * factor * 10) / 10;
+  document.getElementById('scanMacFat').textContent = Math.round((p.per100.fat || 0) * factor * 10) / 10;
 }
 
 /* ===== Data Layer ===== */
@@ -1639,6 +1819,7 @@ function refreshUI() {
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', function() {
     const tab = this.dataset.tab;
+    if (tab !== 'scan' && scannerRunning) stopScanner();
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     this.classList.add('active');
@@ -1723,14 +1904,10 @@ document.getElementById('foodSearch').addEventListener('input', function() {
   searchTimeout = setTimeout(async () => {
     let foods;
     try {
-      foods = await searchFoods(q);
+      foods = await searchFoodsOFF(q);
     } catch (e) {
       spinner.classList.remove('visible');
-      if (e.message === 'rate_limited') {
-        hint.textContent = 'Search rate limit reached. Please wait a moment and try again.';
-      } else {
-        hint.textContent = 'Search failed. Try again or use Quick Add.';
-      }
+      hint.textContent = 'Search failed. Try again or use Quick Add.';
       results.classList.remove('visible');
       return;
     }
@@ -1744,28 +1921,27 @@ document.getElementById('foodSearch').addEventListener('input', function() {
 
     hint.textContent = `Found ${foods.length} results`;
     results.innerHTML = foods.map(f => {
-      const per100 = extractNutrientsPer100g(f);
-      const sv = f.servingSize || 100;
-      const svText = f.servingSize ? `${sv}g` : 'per 100g';
+      const parsed = parseOFFProduct(f);
+      const svText = `${parsed.servingSize}g per serving`;
       return `<div class="search-result-item" data-idx="${foods.indexOf(f)}">
         <div class="sr-info">
-          <div class="sr-name">${escHtml(f.description || 'Unknown')}</div>
-          <div class="sr-brand">${escHtml(f.brandOwner || 'USDA')} · ${svText}</div>
+          <div class="sr-name">${escHtml(parsed.name)}</div>
+          <div class="sr-brand">${escHtml(parsed.brand)} · ${svText}</div>
         </div>
         <div class="sr-macros">
-          <span>${Math.round(per100.calories || 0)}cal</span>
-          <span>P${formatMacro(per100.protein || 0)}</span>
-          <span>C${formatMacro(per100.carbs || 0)}</span>
-          <span>F${formatMacro(per100.fat || 0)}</span>
+          <span>${Math.round(parsed.per100.calories || 0)}cal</span>
+          <span>P${formatMacro(parsed.per100.protein || 0)}</span>
+          <span>C${formatMacro(parsed.per100.carbs || 0)}</span>
+          <span>F${formatMacro(parsed.per100.fat || 0)}</span>
         </div>
         <div class="sr-arrow">→</div>
       </div>`;
     }).join('');
     results.classList.add('visible');
 
-    // Store per-100g data on each result row
+    // Store parsed data on each result row
     results.querySelectorAll('.search-result-item').forEach((el, i) => {
-      el._foodData = { food: foods[i], per100: extractNutrientsPer100g(foods[i]) };
+      el._foodData = { product: foods[i], parsed: parseOFFProduct(foods[i]) };
       el.addEventListener('click', function() {
         selectFood(this._foodData);
       });
@@ -1775,18 +1951,18 @@ document.getElementById('foodSearch').addEventListener('input', function() {
 
 function selectFood(foodData) {
   selectedFoodData = foodData;
-  const f = foodData.food;
-  const name = f.description || 'Unknown';
-  const brand = f.brandOwner || 'USDA';
+  const p = foodData.parsed;
+  const name = p.name;
+  const brand = p.brand;
 
   document.getElementById('selFoodName').textContent = name;
-  document.getElementById('selFoodSource').textContent = `${brand} · ${f.servingSize || 100}g per serving`;
+  document.getElementById('selFoodSource').textContent = `${brand} · Open Food Facts · ${p.servingSize}g per serving`;
   document.getElementById('selectedFoodSection').style.display = 'block';
   document.getElementById('searchResults').classList.remove('visible');
   document.getElementById('searchHint').textContent = `Selected: ${name}`;
 
   // Set portion defaults
-  const portionGrams = f.servingSize || 100;
+  const portionGrams = p.servingSize;
   selectedFoodData.portionSizeGrams = portionGrams;
   document.getElementById('portionSize').textContent = portionGrams;
   document.getElementById('portionCount').value = 1;
@@ -1816,7 +1992,7 @@ function updateFromGrams(grams) {
 
 function updateMacroDisplay(grams) {
   if (!selectedFoodData) return;
-  const p100 = selectedFoodData.per100;
+  const p100 = selectedFoodData.parsed.per100;
   const factor = grams / 100;
   const cal = Math.round((p100.calories || 0) * factor);
   const protein = Math.round((p100.protein || 0) * factor * 10) / 10;
@@ -1878,7 +2054,7 @@ document.getElementById('clearSelection').addEventListener('click', function() {
   document.getElementById('selectedFoodSection').style.display = 'none';
   document.getElementById('foodSearch').value = '';
   document.getElementById('foodSearch').focus();
-  document.getElementById('searchHint').textContent = 'Type a food name to search the USDA database';
+  document.getElementById('searchHint').textContent = 'Type a food name to search Open Food Facts';
 });
 
 // Log searched food
@@ -1887,7 +2063,7 @@ document.getElementById('logSearchedBtn').addEventListener('click', function() {
   const status = document.getElementById('searchStatus');
   const name = document.getElementById('selFoodName').textContent;
   const grams = parseFloat(document.getElementById('servingGrams').value) || 100;
-  const p100 = selectedFoodData.per100;
+  const p100 = selectedFoodData.parsed.per100;
   const factor = grams / 100;
   const cal = Math.round((p100.calories || 0) * factor);
   const protein = Math.round((p100.protein || 0) * factor * 10) / 10;
@@ -1906,7 +2082,7 @@ document.getElementById('logSearchedBtn').addEventListener('click', function() {
   selectedFoodData = null;
   document.getElementById('selectedFoodSection').style.display = 'none';
   document.getElementById('foodSearch').value = '';
-  document.getElementById('searchHint').textContent = 'Type a food name to search the USDA database';
+  document.getElementById('searchHint').textContent = 'Type a food name to search Open Food Facts';
 
   setTimeout(() => { status.textContent = ''; status.className = 'form-status'; }, 2500);
   if (document.querySelector('[data-tab="today"]')) refreshUI();
@@ -1920,6 +2096,117 @@ document.getElementById('foodSearch').addEventListener('keydown', function(e) {
     const first = document.querySelector('.search-result-item');
     if (first) first.click();
   }
+});
+
+/* ===== Barcode Scanner Event Wiring ===== */
+
+// Scan serving grams
+document.getElementById('scanServingGrams').addEventListener('input', function() {
+  const g = parseFloat(this.value) || 0;
+  updateScanMacros(g);
+  document.querySelectorAll('#scanResultSection .serving-preset').forEach(p => {
+    p.classList.toggle('active', parseInt(p.dataset.grams) === Math.round(g));
+  });
+});
+
+// Scan serving presets
+document.querySelectorAll('#scanResultSection .serving-preset').forEach(p => {
+  p.addEventListener('click', function() {
+    const g = parseInt(this.dataset.grams);
+    document.getElementById('scanServingGrams').value = g;
+    updateScanMacros(g);
+    document.querySelectorAll('#scanResultSection .serving-preset').forEach(sp => sp.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// Manual barcode input
+document.getElementById('lookupBarcodeBtn').addEventListener('click', async function() {
+  const input = document.getElementById('manualBarcode');
+  const barcode = input.value.trim();
+  if (!barcode) return;
+  const status = document.getElementById('scanStatus');
+  status.textContent = 'Looking up barcode...';
+  status.className = 'form-status';
+
+  if (scannerRunning) stopScanner();
+
+  const product = await lookupBarcodeOFF(barcode);
+  if (product) {
+    displayScannedProduct(product);
+    status.textContent = '';
+    status.className = '';
+  } else {
+    status.textContent = 'Product not found in Open Food Facts';
+    status.className = 'form-status error';
+  }
+});
+
+// Toggle manual barcode visibility
+document.getElementById('toggleManualBarcode').addEventListener('click', function() {
+  const input = document.getElementById('manualBarcode');
+  const lookupBtn = document.getElementById('lookupBarcodeBtn');
+  if (input.style.display === 'none') {
+    input.style.display = 'block';
+    lookupBtn.style.display = 'inline-flex';
+    this.textContent = '📷 Scan with camera instead';
+  } else {
+    input.style.display = 'none';
+    lookupBtn.style.display = 'none';
+    this.textContent = '⌨️ Type barcode instead';
+  }
+});
+
+// Start scanner button
+document.getElementById('startScanner').addEventListener('click', startScanner);
+
+// Stop scanner button
+document.getElementById('stopScanner').addEventListener('click', function() {
+  stopScanner();
+});
+
+// Scan another
+document.getElementById('scanAnotherBtn').addEventListener('click', function() {
+  scannedFoodData = null;
+  document.getElementById('scanResultSection').style.display = 'none';
+  document.getElementById('scanStatus').textContent = '';
+  document.getElementById('scanStatus').className = 'form-status';
+  startScanner();
+});
+
+// Clear scan result
+document.getElementById('scanResultClear').addEventListener('click', function() {
+  scannedFoodData = null;
+  document.getElementById('scanResultSection').style.display = 'none';
+  document.getElementById('scanStatus').textContent = '';
+});
+
+// Log scanned meal
+document.getElementById('logScannedBtn').addEventListener('click', function() {
+  if (!scannedFoodData) return;
+  const status = document.getElementById('scanStatus');
+  const name = document.getElementById('scanResultName').textContent;
+  const grams = parseFloat(document.getElementById('scanServingGrams').value) || 100;
+  const p = scannedFoodData.parsed;
+  const factor = grams / 100;
+  const cal = Math.round((p.per100.calories || 0) * factor);
+  const protein = Math.round((p.per100.protein || 0) * factor * 10) / 10;
+  const carbs = Math.round((p.per100.carbs || 0) * factor * 10) / 10;
+  const fat = Math.round((p.per100.fat || 0) * factor * 10) / 10;
+
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const displayName = grams !== 100 ? `${name} (${grams}g)` : name;
+  const meal = { id: 'm_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6), name: displayName, calories: cal, protein, carbs, fat, time: timeStr };
+  addMeal(meal, currentDateKey);
+  status.textContent = 'Meal logged ✓';
+  status.className = 'form-status success';
+
+  scannedFoodData = null;
+  document.getElementById('scanResultSection').style.display = 'none';
+
+  setTimeout(() => { status.textContent = ''; status.className = 'form-status'; }, 2500);
+  if (document.querySelector('[data-tab="today"]')) refreshUI();
 });
 
 /* ===== Meal Actions (edit/delete via delegation) ===== */
