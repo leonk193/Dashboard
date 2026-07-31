@@ -1424,17 +1424,29 @@ let searchTimeout = null;
 const SEARCH_CACHE = {};
 let selectedFoodData = null; // { product, parsed: { per100: {cal, protein, carbs, fat}, name, brand, servingSize, barcode } }
 
-/* ===== Barcode Scanner State ===== */
-let html5QrCode = null;
+/* ===== Barcode Scanner State (Single zxing-wasm Path) ===== */
+let scannerStream = null;
+let scannerVideo = null;
+let scannerCanvas = null;
+let scannerCtx = null;
 let scannerRunning = false;
+let scannerLoopId = null;
+let scannerDecodeInFlight = false;
+let lastDecodeTime = 0;
+let zxingReadyPromise = null;
 let scannedFoodData = null;
-// let isScanningMode = true; // reserved for future scan/mode toggle
 
-/* Native BarcodeDetector state (Chrome Android — hardware accelerated) */
-let nativeStream = null;
-let nativeVideo = null;
-let nativeScanning = false;
-let barcodeDetector = null;
+function prepareBarcodeReader() {
+  if (zxingReadyPromise) return zxingReadyPromise;
+  if (!window.ZXingWASM || typeof window.ZXingWASM.prepareZXingModule !== 'function') {
+    return Promise.reject(new Error('Barcode reader unavailable'));
+  }
+  zxingReadyPromise = window.ZXingWASM.prepareZXingModule({ fireImmediately: true }).catch(function(err) {
+    zxingReadyPromise = null;
+    throw err;
+  });
+  return zxingReadyPromise;
+}
 
 async function searchFoodsOFF(query) {
   if (!query || query.length < 2) return [];
@@ -1493,7 +1505,7 @@ function formatMacro(val) {
   return val < 10 ? val.toFixed(1) : Math.round(val);
 }
 
-/* ===== Barcode Scanner Functions ===== */
+/* ===== Barcode Scanner Functions (single zxing-wasm path, all browsers) ===== */
 async function startScanner() {
   if (scannerRunning) return;
   const viewport = document.getElementById('scannerViewport');
@@ -1508,134 +1520,172 @@ async function startScanner() {
   status.className = 'form-status';
   spinner.style.display = 'flex';
 
-  // Path A — Native BarcodeDetector (Chrome Android, hardware accelerated)
-  if ('BarcodeDetector' in window) {
-    try {
-      barcodeDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+  try {
+    // Kick off WASM load in parallel with camera permission
+    const readerReady = prepareBarcodeReader();
 
-      const video = document.createElement('video');
-      video.id = 'nativeVideo';
-      video.setAttribute('playsinline', '');
-      video.setAttribute('autoplay', '');
-      video.style.width = '100%';
-      video.style.height = '100%';
-      video.style.objectFit = 'cover';
-      viewport.appendChild(video);
-      nativeVideo = video;
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
+    });
+    scannerStream = stream;
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
-      });
-      nativeStream = stream;
-      video.srcObject = stream;
-      await video.play();
-      scannerRunning = true;
-      nativeScanning = true;
-      placeholder.style.display = 'none';
-      overlay.style.display = 'block';
-      startBtn.style.display = 'none';
-      stopBtn.style.display = 'inline-flex';
-      status.textContent = 'Scanning — point at a barcode';
-      status.className = '';
-      spinner.style.display = 'none';
-
-      requestAnimationFrame(detectFrame);
-    } catch (err) {
-      console.warn('Native scanner failed:', err);
-      // Fall through to the html5-qrcode path
-      if (nativeStream) { nativeStream.getTracks().forEach(function(t) { t.stop(); }); nativeStream = null; }
-      if (nativeVideo) { nativeVideo.remove(); nativeVideo = null; }
-      if (barcodeDetector) { barcodeDetector = null; }
-      nativeScanning = false;
-      // Try fallback below
+    // Continuous autofocus where supported (capability-checked, never throws)
+    const track = stream.getVideoTracks()[0];
+    if (track && typeof track.getCapabilities === 'function') {
+      try {
+        const caps = track.getCapabilities();
+        if (caps && Array.isArray(caps.focusMode) && caps.focusMode.includes('continuous')) {
+          await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(function() {});
+        }
+      } catch (e) { /* capability probing is best-effort */ }
     }
-  }
 
-  // Path B — html5-qrcode fallback (Firefox, Safari, or if native path errored)
-  if (!scannerRunning) {
-    try {
-      html5QrCode = new Html5Qrcode('scannerViewport');
+    const video = document.createElement('video');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('autoplay', '');
+    video.setAttribute('muted', '');
+    video.muted = true;
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.objectFit = 'cover';
+    viewport.appendChild(video);
+    scannerVideo = video;
+    video.srcObject = stream;
+    await video.play();
 
-      const scanConfig = {
-        fps: 10,
-        useBarCodeDetectorIfSupported: true,
-      };
+    await readerReady; // ensure decoder is usable before claiming "scanning"
 
-      await html5QrCode.start(
-        { facingMode: 'environment' },
-        scanConfig,
-        onScanSuccess,
-        onScanFailure
-      );
-      scannerRunning = true;
-      placeholder.style.display = 'none';
-      overlay.style.display = 'block';
-      startBtn.style.display = 'none';
-      stopBtn.style.display = 'inline-flex';
-      status.textContent = 'Point camera at a barcode';
-      status.className = '';
-    } catch (err) {
-      console.warn('Fallback scanner also failed:', err);
-      placeholder.innerHTML = `
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
-        <span style="font-size:14px;font-weight:600;">Camera unavailable</span>
-        <span style="font-size:12px;color:var(--text-quaternary);">Permission denied or no camera found</span>
-      `;
-      status.textContent = 'Camera unavailable — type a barcode below';
-      status.className = 'form-status error';
-    } finally {
-      if (spinner) spinner.style.display = 'none';
-    }
+    scannerCanvas = document.createElement('canvas');
+    scannerCtx = scannerCanvas.getContext('2d', { willReadFrequently: true });
+
+    scannerRunning = true;
+    scannerDecodeInFlight = false;
+    lastDecodeTime = 0;
+    placeholder.style.display = 'none';
+    overlay.style.display = 'block';
+    startBtn.style.display = 'none';
+    stopBtn.style.display = 'inline-flex';
+    status.textContent = 'Align barcode inside the rectangle';
+    status.className = '';
+
+    scannerLoopId = requestAnimationFrame(detectFrame);
+  } catch (err) {
+    console.warn('Scanner start failed:', err);
+    stopScanner();
+    placeholder.innerHTML = `
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <span style="font-size:14px;font-weight:600;">Camera unavailable</span>
+      <span style="font-size:12px;color:var(--text-quaternary);">Permission denied or no camera found</span>
+    `;
+    placeholder.style.display = 'flex';
+    status.textContent = 'Camera unavailable — type a barcode below';
+    status.className = 'form-status error';
+  } finally {
+    if (spinner) spinner.style.display = 'none';
   }
 }
 
-async function detectFrame() {
-  if (!nativeScanning || !nativeVideo || !barcodeDetector) return;
-  try {
-    const barcodes = await barcodeDetector.detect(nativeVideo);
-    if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-      nativeScanning = false;
-      onScanSuccess(barcodes[0].rawValue, barcodes[0]);
-      return;
+/* Map the on-screen ROI rectangle (70% x 35%, centered) to source-video pixels,
+   compensating for object-fit: cover cropping in the 4:3 viewport. */
+function roiSourceRect() {
+  const vw = scannerVideo.videoWidth;
+  const vh = scannerVideo.videoHeight;
+  if (!vw || !vh) return null;
+
+  const viewport = document.getElementById('scannerViewport');
+  const dispW = viewport.clientWidth || 4;
+  const dispH = viewport.clientHeight || 3;
+
+  // object-fit: cover — the video is scaled to fill, overflow is cropped
+  const scale = Math.max(dispW / vw, dispH / vh);
+  const visW = dispW / scale;  // visible source width
+  const visH = dispH / scale;  // visible source height
+  const offX = (vw - visW) / 2;
+  const offY = (vh - visH) / 2;
+
+  return {
+    sx: Math.floor(offX + visW * 0.15),
+    sy: Math.floor(offY + visH * 0.325),
+    sw: Math.floor(visW * 0.70),
+    sh: Math.floor(visH * 0.35)
+  };
+}
+
+async function detectFrame(timestamp) {
+  if (!scannerRunning || !scannerVideo) return;
+
+  if (!scannerDecodeInFlight && timestamp - lastDecodeTime >= 100) { // ~10 FPS throttle
+    lastDecodeTime = timestamp;
+    const rect = roiSourceRect();
+
+    if (rect && rect.sw > 0 && rect.sh > 0) {
+      if (scannerCanvas.width !== rect.sw || scannerCanvas.height !== rect.sh) {
+        scannerCanvas.width = rect.sw;
+        scannerCanvas.height = rect.sh;
+      }
+      scannerCtx.drawImage(scannerVideo, rect.sx, rect.sy, rect.sw, rect.sh, 0, 0, rect.sw, rect.sh);
+      const imageData = scannerCtx.getImageData(0, 0, rect.sw, rect.sh);
+
+      scannerDecodeInFlight = true;
+      try {
+        const results = await window.ZXingWASM.readBarcodes(imageData, {
+          formats: ['EAN13', 'EAN8', 'UPCA', 'UPCE'],
+          tryHarder: true,
+          tryRotate: true,
+          tryInvert: true,
+          maxNumberOfSymbols: 1
+        });
+        if (scannerRunning && results && results.length > 0 && results[0].isValid && results[0].text) {
+          const barcodeText = results[0].text;
+          stopScanner();
+          onScanSuccess(barcodeText, results[0]);
+          return;
+        }
+      } catch (e) {
+        // Frame decode errors are expected while the camera warms up — skip
+      } finally {
+        scannerDecodeInFlight = false;
+      }
     }
-  } catch (e) {
-    // detect() throws when video is not ready — skip frame
   }
-  requestAnimationFrame(detectFrame);
+
+  if (scannerRunning) {
+    scannerLoopId = requestAnimationFrame(detectFrame);
+  }
 }
 
 function stopScanner() {
-  if (!scannerRunning) return;
-
-  // Stop native path
-  nativeScanning = false;
-  if (nativeStream) {
-    nativeStream.getTracks().forEach(function(t) { t.stop(); });
-    nativeStream = null;
-  }
-  if (nativeVideo) {
-    nativeVideo.srcObject = null;
-    nativeVideo.remove();
-    nativeVideo = null;
-  }
-  barcodeDetector = null;
-
-  // Stop html5-qrcode path
-  if (html5QrCode) {
-    try {
-      html5QrCode.stop();
-      html5QrCode.clear();
-    } catch (e) {}
-    html5QrCode = null;
-  }
-
   scannerRunning = false;
+
+  if (scannerLoopId) {
+    cancelAnimationFrame(scannerLoopId);
+    scannerLoopId = null;
+  }
+  if (scannerStream) {
+    scannerStream.getTracks().forEach(function(t) { t.stop(); });
+    scannerStream = null;
+  }
+  if (scannerVideo) {
+    scannerVideo.srcObject = null;
+    scannerVideo.remove();
+    scannerVideo = null;
+  }
+  scannerCanvas = null;
+  scannerCtx = null;
+  scannerDecodeInFlight = false;
+
   var el;
   el = document.getElementById('scannerOverlay');
   if (el) el.style.display = 'none';
+  el = document.getElementById('scannerPlaceholder');
+  if (el) el.style.display = 'flex';
   el = document.getElementById('startScanner');
   if (el) el.style.display = 'inline-flex';
   el = document.getElementById('stopScanner');
@@ -1662,10 +1712,6 @@ async function onScanSuccess(decodedText, decodedResult) {
     status.className = 'form-status error';
     document.getElementById('startScanner').style.display = 'inline-flex';
   }
-}
-
-function onScanFailure(err) {
-  // Fires on every non-detection frame — deliberately silent
 }
 
 function displayScannedProduct(product) {
