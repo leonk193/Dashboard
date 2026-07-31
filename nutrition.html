@@ -9,7 +9,7 @@
 <meta name="color-scheme" content="dark">
 <title>Nutrition — Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/zxing-wasm@3.1.2/dist/iife/reader/index.js"></script>
 <script src="sync.js" defer></script>
 <script src="auth-sync.js" defer></script>
 <script src="topbar.js" defer></script>
@@ -1113,9 +1113,11 @@ select option { background: var(--bg-dropdown); color: var(--text-primary); }
             <span style="font-size:14px;font-weight:600;">Camera ready to scan</span>
           </div>
         </div>
-        <!-- These sit OUTSIDE scannerViewport so Html5Qrcode doesn't destroy them -->
-        <div id="scannerOverlay" style="display:none;position:absolute;top:0;left:0;right:0;margin:0 auto;max-width:400px;aspect-ratio:4/3;z-index:10;pointer-events:none;border:2px solid rgba(91,141,239,0.5);border-radius:14px;box-sizing:border-box;">
-          <div style="position:absolute;top:50%;left:15%;right:15%;height:2px;background:linear-gradient(90deg,transparent,rgba(91,141,239,0.9),transparent);animation:scanLine 1.5s ease-in-out infinite;"></div>
+        <!-- Overlay sits OUTSIDE scannerViewport so the scanner library doesn't destroy it -->
+        <div id="scannerOverlay" style="display:none;position:absolute;top:0;left:0;right:0;margin:0 auto;max-width:400px;aspect-ratio:4/3;z-index:10;pointer-events:none;border-radius:14px;box-sizing:border-box;overflow:hidden;">
+          <div style="position:absolute;top:32.5%;left:15%;width:70%;height:35%;border:2px dashed rgba(91,141,239,0.9);border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,0.35);box-sizing:border-box;">
+            <div style="position:absolute;top:50%;left:5%;right:5%;height:2px;background:linear-gradient(90deg,transparent,rgba(91,141,239,0.95),transparent);animation:scanLine 1.5s ease-in-out infinite;"></div>
+          </div>
         </div>
         <div id="scannerSpinner" style="display:none;position:absolute;top:0;left:0;right:0;margin:0 auto;max-width:400px;aspect-ratio:4/3;z-index:11;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
           <div style="width:28px;height:28px;border:3px solid rgba(255,255,255,0.15);border-top-color:var(--text-primary);border-radius:50%;animation:spin 0.6s linear infinite;"></div>
