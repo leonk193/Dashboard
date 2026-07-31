@@ -1692,8 +1692,8 @@ function stopScanner() {
 }
 
 async function onScanSuccess(decodedText, decodedResult) {
+  if (scannerRunning) stopScanner(); // always tear down the live camera feed first
   if (document.getElementById('scanResultSection').style.display !== 'none') return;
-  stopScanner(); // always tear down the live camera feed before handling the result
 
   const status = document.getElementById('scanStatus');
   status.textContent = `Barcode detected: ${decodedText}`;
