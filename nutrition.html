@@ -1642,9 +1642,8 @@ async function detectFrame(timestamp) {
           tryInvert: true,
           maxNumberOfSymbols: 1
         });
-        if (scannerRunning && results && results.length > 0 && results[0].isValid && results[0].text) {
+        if (scannerRunning && results && results.length > 0 && results[0].text) {
           const barcodeText = results[0].text;
-          stopScanner();
           onScanSuccess(barcodeText, results[0]);
           return;
         }
@@ -1694,7 +1693,7 @@ function stopScanner() {
 
 async function onScanSuccess(decodedText, decodedResult) {
   if (document.getElementById('scanResultSection').style.display !== 'none') return;
-  stopScanner();
+  stopScanner(); // always tear down the live camera feed before handling the result
 
   const status = document.getElementById('scanStatus');
   status.textContent = `Barcode detected: ${decodedText}`;
