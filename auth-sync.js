@@ -388,14 +388,25 @@
       }
       if (!cfg) return;
 
-      var state = self._collect(cfg.syncedKeys || [], cfg.syncedPrefixes || []);
-      var transformed = cfg.transformPush ? cfg.transformPush(state) : state;
-      var json = JSON.stringify(transformed);
-      if (json === self._lastSyncedJson[appKey]) return;
+      var local = self._collect(cfg.syncedKeys || [], cfg.syncedPrefixes || []);
+      var transformed = cfg.transformPush ? cfg.transformPush(local) : local;
+
+      // Multiple pages can share one cloud row (appKey). A config often
+      // owns only a subset of that row's keys, so naively replacing the
+      // whole row here would clobber the sibling keys owned by other
+      // pages. Merge our local slice into whatever is already stored —
+      // that preserves the row while still reflecting deletions, which
+      // is what makes removing a water bottle persist when logged in.
+      var prevJson = self._lastSyncedJson[appKey];
+      var base = {};
+      if (prevJson) { try { base = JSON.parse(prevJson); } catch (e) {} }
+      var merged = Object.assign({}, base, transformed);
+      var json = JSON.stringify(merged);
+      if (json === prevJson) return;
 
       try {
         var { error } = await self.supa.from('user_app_state').upsert(
-          { user_id: self.user.id, key: appKey, data: transformed, updated_at: new Date().toISOString() },
+          { user_id: self.user.id, key: appKey, data: merged, updated_at: new Date().toISOString() },
           { onConflict: 'user_id,key' }
         );
         if (!error) self._lastSyncedJson[appKey] = json;
@@ -414,10 +425,14 @@
 
         for (var i = 0; i < self._configs.length; i++) {
           var cfg = self._configs[i];
-          var state = self._collect(cfg.syncedKeys || [], cfg.syncedPrefixes || []);
-          var transformed = cfg.transformPush ? cfg.transformPush(state) : state;
-          var json = JSON.stringify(transformed);
-          if (json === self._lastSyncedJson[cfg.appKey]) continue;
+          var local = self._collect(cfg.syncedKeys || [], cfg.syncedPrefixes || []);
+          var transformed = cfg.transformPush ? cfg.transformPush(local) : local;
+          var prevJson = self._lastSyncedJson[cfg.appKey];
+          var base = {};
+          if (prevJson) { try { base = JSON.parse(prevJson); } catch (e) {} }
+          var merged = Object.assign({}, base, transformed);
+          var json = JSON.stringify(merged);
+          if (json === prevJson) continue;
           try {
             fetch(SUPABASE_URL + '/rest/v1/user_app_state?on_conflict=user_id,key', {
               method: 'POST',
@@ -427,7 +442,7 @@
                 'Content-Type': 'application/json',
                 'Prefer': 'resolution=merge-duplicates'
               },
-              body: JSON.stringify({ user_id: self.user.id, key: cfg.appKey, data: transformed, updated_at: new Date().toISOString() }),
+              body: JSON.stringify({ user_id: self.user.id, key: cfg.appKey, data: merged, updated_at: new Date().toISOString() }),
               keepalive: true
             }).catch(function () {});
             self._lastSyncedJson[cfg.appKey] = json;

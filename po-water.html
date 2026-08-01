@@ -1154,15 +1154,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // When embedded in health.html, the parent owns sync for the 'health'
   // row — running our own sync here would race and wipe sibling keys.
   try { if (window.self !== window.top) return; } catch (e) { return; }
-  if (typeof initCloudSync !== 'function') return;
-  initCloudSync({
-    appKey: 'health',
-    syncedKeys: ['po_water_v1'],
-    onApplied: function () {
-      window.dispatchEvent(new Event('storage'));
-    }
-  });
-  // Also init authenticated sync
+  // Use only authenticated sync here. Running the legacy anonymous sync
+  // alongside it can pull a stale public row back over a bottle removal.
   (function () {
     var wfa = setInterval(function () {
       if (window.auth && window.auth.ready) {

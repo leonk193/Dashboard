@@ -588,7 +588,7 @@ body::after {
       if (window.auth && window.auth.ready) {
         clearInterval(waitForAuth);
         window.auth.initSync({
-          appKey: 'home',
+          appKey: 'health',
           syncedKeys: ['po_water_v1'],
           onApplied: function () {
             window.dispatchEvent(new Event('storage'));
