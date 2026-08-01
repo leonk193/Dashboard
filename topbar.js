@@ -1,4 +1,4 @@
-﻿// =============================================================
+// =============================================================
 // Persistent dashboard top bar.
 // Drop this on any page with:
 //     <script src="topbar.js" defer></script>
@@ -7,6 +7,16 @@
 // water "+1" button writes to localStorage and (if configured)
 // pushes a merged update to the Supabase health row so the
 // new bottle appears on every device within ~1 second.
+// =============================================================
+// Phase 2 redesign (restrained native):
+//   - 5-slot bottom nav: Home · Quick Log · Health · Fitness · More
+//     (truthful active state via per-page data-page, replaces the
+//     lying 3-tab bar and the default-to-main fallback).
+//   - Inline SVG icons replace emoji + the grayscale-filter trick.
+//   - Flat accent active state; 44px targets; safe-area aware.
+//   - lockGestures() (iOS zoom lockdown) removed.
+// All data keys, Supabase writes, sync, and the 6 AM active-date
+// logic are unchanged.
 // =============================================================
 (function () {
   'use strict';
@@ -19,6 +29,25 @@
   const TOPBAR_SUPABASE_URL = (window.DASH_SUPABASE_URL) || 'https://srajryooffirbroltjmg.supabase.co';
   const TOPBAR_SUPABASE_KEY = (window.DASH_SUPABASE_KEY) || 'sb_publishable_5142ZwTLF_DkSVRzciNuRA_bHwRAu4c';
 
+  // -------- SVG icon set (24px stroke icons, 1.8 stroke) --------
+  const ICONS = {
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/></svg>',
+    water: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 11a6 6 0 1 1-12 0c0-3.4 2.5-6.8 6-11z"/><path d="M9.5 14a2.6 2.6 0 0 0 2.5 2.6"/></svg>',
+    health: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.8h3.4a1 1 0 0 1 1 1V8l3.5 3.5a1 1 0 0 1 0 1.4L14.7 16.4v3.2a1 1 0 0 1-1 1h-3.4a1 1 0 0 1-1-1v-3.2l-3.5-3.5a1 1 0 0 1 0-1.4L9.3 8V4.8a1 1 0 0 1 1-1z"/><path d="M12 8l-2 4h3l-2 4"/></svg>',
+    fitness: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5 17.5 17.5"/><path d="M4 8 2.5 9.5 6.5 13.5 8 12"/><path d="M20 8l1.5 1.5-4 4L16 12"/><path d="M6.5 4 8 5.5"/><path d="M17.5 16 19 17.5"/></svg>',
+    finance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V10"/><path d="M9.5 19V5"/><path d="M15 19v-7"/><path d="M20 19V8"/><rect x="2.5" y="19.5" width="19" height="2.5"/></svg>',
+    caffeine: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h11v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z"/><path d="M16 9h1.5a2 2 0 0 1 2 2v.5a2 2 0 0 1-2 2H16"/><path d="M8 4.5 7 6.5"/><path d="M12 4.5 11 6.5"/><path d="M16 4.5 15 6.5"/></svg>',
+    nutrition: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3c0 3-1.5 5-1.5 8 0 4 3 8 7 8s7-4 7-8c0-3-1.5-5-1.5-8"/><path d="M12 3v16"/><path d="M8.5 3c0 3-1 5-1 7"/><path d="M15.5 3c0 3 1 5 1 7"/></svg>',
+    nova: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 3.5 2 4.5 4.5 5-2.5.5-3.5 1.5-4.5 5-1-3.5-2-4.5-4.5-5C10 7.5 11 6.5 12 3z"/><path d="M18.5 14c.6 2 1.2 2.6 2.5 3-1.3.4-1.9 1-2.5 3-.6-2-1.2-2.6-2.5-3 1.3-.4 1.9-1 2.5-3z"/></svg>',
+    bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2z"/></svg>',
+    more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>',
+    gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-3.4 3.7-5 7-5s5.8 1.6 7 5"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>'
+  };
+  function icon(name) { return ICONS[name] || ''; }
+
   // -------- CSS --------
   const css = `
 .topbar {
@@ -30,16 +59,16 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
 }
-.topbar-water-wrap {
-  display: flex; align-items: stretch;
-}
+.topbar svg { display: block; }
+.topbar-water-wrap { display: flex; align-items: stretch; }
 .topbar-water-pill {
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 9px 14px;
+  min-height: 44px;
+  padding: 0 14px;
   background: rgba(125, 211, 252, 0.08);
   border: 1px solid rgba(125, 211, 252, 0.16);
   border-right: none;
-  border-radius: 12px 0 0 12px;
+  border-radius: 14px 0 0 14px;
   text-decoration: none;
   color: #FAFAFA;
   -webkit-tap-highlight-color: transparent;
@@ -54,8 +83,8 @@
   animation: topbar-miss-pulse 1.6s ease-in-out infinite;
 }
 @keyframes topbar-miss-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
-  50%      { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger, #ff6b6b) 45%, transparent); }
+  50%      { box-shadow: 0 0 0 5px color-mix(in srgb, var(--danger, #ff6b6b) 0%, transparent); }
 }
 .topbar-pill-count {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -65,52 +94,40 @@
   white-space: nowrap;
 }
 .topbar-water-add {
-  width: 44px;
+  width: 48px;
   border: 1px solid rgba(125, 211, 252, 0.16);
-  background: linear-gradient(180deg, rgba(125, 211, 252, 0.28), rgba(110, 231, 183, 0.28));
-  color: #FFFFFF;
-  font-family: inherit; font-size: 20px; font-weight: 700; line-height: 1;
+  background: rgba(125, 211, 252, 0.16);
+  color: #7DD3FC;
+  display: inline-flex; align-items: center; justify-content: center;
   cursor: pointer;
-  border-radius: 0 12px 12px 0;
+  border-radius: 0 14px 14px 0;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s, transform 0.10s;
 }
 .topbar-water-add:active { transform: scale(0.94); }
 .topbar-water-add.flash {
-  background: linear-gradient(180deg, rgba(125, 211, 252, 0.7), rgba(110, 231, 183, 0.7));
+  background: rgba(125, 211, 252, 0.45);
+  color: #0a0a0b;
 }
-.topbar-finance-btn {
+.topbar-icon-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 44px; height: 42px;
+  width: 48px; height: 44px;
   border: 1px solid rgba(255, 255, 255, 0.10);
   background: rgba(255, 255, 255, 0.04);
-  border-radius: 12px;
+  border-radius: 14px;
+  color: var(--text-secondary, #B8B6B0);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
-.topbar-finance-btn:hover { background: rgba(255, 255, 255, 0.08); }
-.topbar-auth-btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 44px; height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 12px;
-  text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
-  cursor: pointer;
-  transition: background 0.15s;
+.topbar-icon-btn svg { width: 22px; height: 22px; }
+.topbar-icon-btn:hover { background: rgba(255, 255, 255, 0.08); color: #FAFAFA; }
+.topbar-auth-btn.logged-in {
+  background: rgba(125, 211, 252, 0.12);
+  border-color: rgba(125, 211, 252, 0.3);
+  color: #7DD3FC;
 }
-.topbar-auth-btn:hover { background: rgba(255, 255, 255, 0.08); }
-.topbar-auth-btn.logged-in { background: rgba(125, 211, 252, 0.12); border-color: rgba(125, 211, 252, 0.3); }
-.topbar-auth-icon {
-  font-size: 20px; line-height: 1;
-  filter: grayscale(100%) brightness(1.4);
-  opacity: 0.85;
-}
-.topbar-auth-btn.logged-in .topbar-auth-icon {
-  filter: none; opacity: 1;
-}
+
 /* Auth modal overlay (reuses modal-bg/modal classes from pages that define them) */
 #authModalBg {
   position: fixed; inset: 0; z-index: 120; display: none;
@@ -127,7 +144,7 @@
   display: flex; align-items: center; justify-content: space-between;
 }
 
-/* Bottom tab bar — Instagram-style */
+/* Bottom tab bar — 5-slot, SVG icons, truthful active state */
 .bottombar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
   display: flex; justify-content: space-around; align-items: stretch;
@@ -137,92 +154,96 @@
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
 }
 .bottombar-tab {
-  flex: 1;
+  flex: 1; min-width: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 3px;
-  padding: 6px 0 4px;
+  padding: 7px 0 5px;
   text-decoration: none;
   color: rgba(255, 255, 255, 0.45);
   font-size: 10px; font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   -webkit-tap-highlight-color: transparent;
   transition: color 0.15s;
+  position: relative;
 }
-.bottombar-tab-icon {
-  font-size: 24px; line-height: 1;
-  filter: grayscale(100%) brightness(1.2);
-  opacity: 0.55;
-  transition: opacity 0.15s, filter 0.15s, transform 0.10s;
-}
-.bottombar-tab.active {
-  color: #FAFAFA;
-}
+.bottombar-tab-icon { display: flex; align-items: center; justify-content: center; }
+.bottombar-tab-icon svg { width: 24px; height: 24px; }
+.bottombar-tab.active { color: #FAFAFA; }
 .bottombar-tab.active .bottombar-tab-icon {
-  filter: grayscale(100%) brightness(1.6);
-  opacity: 1;
+  color: var(--accent, #6BE3A4);
+}
+/* accent underline instead of glow/brightness trick */
+.bottombar-tab.active::after {
+  content: ''; position: absolute; top: -1px; left: 24%; right: 24%; height: 2px;
+  background: var(--accent, #6BE3A4); border-radius: 0 0 2px 2px;
 }
 .bottombar-tab:active .bottombar-tab-icon { transform: scale(0.92); }
 
+/* Quick Log hub bottom sheet */
+#qlBackdrop {
+  position: fixed; inset: 0; z-index: 110; display: none;
+  background: rgba(0,0,0,0.5);
+}
+#qlBackdrop.show { display: block; }
+.ql-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 111;
+  background: #0E0E10;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px 18px 0 0;
+  padding: 10px 14px calc(18px + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  max-height: 74vh; overflow-y: auto;
+}
+.ql-sheet.open { transform: translateY(0); }
+.ql-grabber {
+  width: 40px; height: 4px; border-radius: 2px;
+  background: rgba(255,255,255,0.14); margin: 2px auto 12px;
+}
+.ql-title {
+  font-size: 16px; font-weight: 700; color: #FAFAFA;
+  margin-bottom: 4px;
+}
+.ql-sub { font-size: 12px; color: #76746E; margin-bottom: 14px; }
+.ql-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.ql-item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 14px 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  color: #FAFAFA; font-size: 12px; font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.10s;
+}
+.ql-item:active { transform: scale(0.96); }
+.ql-item svg { width: 22px; height: 22px; }
+.ql-item.water   { color: #7DD3FC; }
+.ql-item.health  { color: #1D9E75; }
+.ql-item.fitness { color: #7C5CFF; }
+.ql-item.caffeine{ color: #C9A36B; }
+.ql-item.nutrition{ color: #FBBF24; }
+.ql-item.nova    { color: #A78BFA; }
+@media (max-width: 380px) {
+  .ql-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* Push page content above the fixed bottom bar */
 body.has-bottombar {
-  padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
 }
 
 @media (max-width: 480px) {
   .topbar { padding-left: 10px; padding-right: 10px; gap: 6px; }
-  .topbar-water-pill { padding: 8px 11px; gap: 6px; }
+  .topbar-water-pill { padding: 0 11px; gap: 6px; }
   .topbar-pill-count { font-size: 12px; }
-  .topbar-water-add { width: 40px; font-size: 18px; }
-  .topbar-finance-btn { width: 40px; height: 38px; }
-  .topbar-finance-icon { font-size: 18px; }
-  .topbar-auth-btn { width: 40px; height: 38px; }
-  .bottombar-tab-icon { font-size: 22px; }
+  .topbar-water-add { width: 44px; }
+  .topbar-icon-btn { width: 44px; height: 40px; }
   .bottombar-tab { font-size: 10px; }
-}
-
-/* === Global mobile lockdown ===
-   1) Hide the right-side scrollbar on phones (iOS uses overlay scrollbars anyway).
-   2) Stop iOS auto-text-size-adjust.
-   3) touch-action: pan-y prevents pinch-zoom while still allowing vertical scroll.
-   4) overscroll-behavior on every common modal class stops scroll chaining —
-      scrolling inside a settings popup won't drag the page behind it.
-   5) When body has .topbar-modal-open, the page can't scroll at all (locked).
-*/
-html, body {
-  -webkit-text-size-adjust: 100%;
-}
-@media (max-width: 768px) {
-  html { touch-action: pan-y; }
-  ::-webkit-scrollbar { width: 0; height: 0; display: none; }
-  html, body { scrollbar-width: none; -ms-overflow-style: none; }
-}
-.modal-bg, .modal, .po-modal-bg, .po-modal, .wt-overlay, .wt-viewer {
-  overscroll-behavior: contain;
-}
-body.topbar-modal-open {
-  overflow: hidden;
-  touch-action: none;
-}
-/* On phones, blow the modals up to full screen and let them be the only
-   scrolling element. Way less "is this scrolling the page or the modal?"
-   confusion. */
-@media (max-width: 480px) {
-  .modal-bg, .po-modal-bg {
-    padding: 0 !important;
-    align-items: stretch !important;
-    justify-content: stretch !important;
-  }
-  .modal, .po-modal {
-    width: 100% !important;
-    max-width: 100% !important;
-    max-height: 100vh !important;
-    height: 100vh !important;
-    border-radius: 0 !important;
-    padding-top: max(20px, env(safe-area-inset-top)) !important;
-    padding-bottom: max(28px, env(safe-area-inset-bottom)) !important;
-    overflow-y: auto !important;
-    overscroll-behavior: contain;
-  }
+  .bottombar-tab-icon svg { width: 22px; height: 22px; }
 }
 `;
 
@@ -234,36 +255,58 @@ body.topbar-modal-open {
       <span class="topbar-pill-dot"></span>
       <span class="topbar-pill-count" id="topbarWaterCount">0/0</span>
     </a>
-    <button class="topbar-water-add" id="topbarWaterAdd" aria-label="Log one drink" type="button">+</button>
+    <button class="topbar-water-add" id="topbarWaterAdd" aria-label="Log one drink" type="button">${icon('plus')}</button>
   </div>
-  <a href="finance.html" class="topbar-finance-btn" id="topbarFinance" aria-label="Finance">
-    <span class="topbar-finance-icon">📊</span>
-  </a>
-  <button class="topbar-auth-btn" id="topbarAuthBtn" type="button" title="Account">
-    <span class="topbar-auth-icon" id="topbarAuthIcon">🔐</span>
-  </button>
+  <a href="finance.html" class="topbar-icon-btn topbar-finance-btn" id="topbarFinance" aria-label="Finance">${icon('finance')}</a>
+  <button class="topbar-icon-btn topbar-auth-btn" id="topbarAuthBtn" type="button" title="Account" aria-label="Account">${icon('user')}</button>
 </header>
 `;
 
   const bottombarHtml = `
 <nav class="bottombar" id="bottombar" role="navigation" aria-label="Main tabs">
   <a href="index.html" class="bottombar-tab" data-page="main">
-    <span class="bottombar-tab-icon">🏠</span>
-    <span>Main</span>
+    <span class="bottombar-tab-icon">${icon('home')}</span>
+    <span>Home</span>
   </a>
+  <button class="bottombar-tab" data-page="quick" id="quickLogTab" type="button" aria-haspopup="dialog" aria-expanded="false">
+    <span class="bottombar-tab-icon">${icon('bolt')}</span>
+    <span>Quick Log</span>
+  </button>
   <a href="health.html" class="bottombar-tab" data-page="health">
-    <span class="bottombar-tab-icon">💊</span>
+    <span class="bottombar-tab-icon">${icon('health')}</span>
     <span>Health</span>
   </a>
   <a href="gym.html" class="bottombar-tab" data-page="fitness">
-    <span class="bottombar-tab-icon">💪</span>
+    <span class="bottombar-tab-icon">${icon('fitness')}</span>
     <span>Fitness</span>
+  </a>
+  <a href="nova-lite.html" class="bottombar-tab" data-page="more">
+    <span class="bottombar-tab-icon">${icon('more')}</span>
+    <span>More</span>
   </a>
 </nav>
 `;
 
+  // -------- Quick Log hub sheet --------
+  const quickLogHtml = `
+<div id="qlBackdrop"></div>
+<div class="ql-sheet" id="qlSheet" role="dialog" aria-modal="true" aria-label="Quick log">
+  <div class="ql-grabber"></div>
+  <div class="ql-title">Quick log</div>
+  <div class="ql-sub">Log something in seconds</div>
+  <div class="ql-grid">
+    <a class="ql-item water" href="po-water.html">${icon('water')}<span>Water</span></a>
+    <a class="ql-item health" href="health.html">${icon('health')}<span>Stack</span></a>
+    <a class="ql-item fitness" href="gym.html">${icon('fitness')}<span>Gym</span></a>
+    <a class="ql-item caffeine" href="caffeine.html">${icon('caffeine')}<span>Caffeine</span></a>
+    <a class="ql-item nutrition" href="nutrition.html">${icon('nutrition')}<span>Meal</span></a>
+    <a class="ql-item nova" href="nova-lite.html">${icon('nova')}<span>Nova</span></a>
+  </div>
+</div>
+`;
+
   // Pages where we suppress the app chrome: finance has its own internal
-  // 4-tab bottom nav and self-contained back button.
+  // 5-tab bottom nav and self-contained back button.
   function isFinancePage() {
     const p = (window.location.pathname || '').toLowerCase();
     return p.endsWith('/finance.html') || p.endsWith('finance.html');
@@ -276,11 +319,18 @@ body.topbar-modal-open {
   function shouldShowChrome() {
     return !isFinancePage() && !isEmbedded();
   }
+  // Truthful active state: every page declares its own slot.
+  // Declared via <body data-nav="home|health|fitness|more"> (Home = index,
+  // More = nova/avatar/main/settings catch-all). Falls back to the
+  // legacy currentPageKey() so existing pages stay truthful while migrating.
   function currentPageKey() {
+    const b = document.body;
+    if (b && b.getAttribute && b.getAttribute('data-nav')) return b.getAttribute('data-nav');
     const p = (window.location.pathname || '').toLowerCase();
+    if (p.endsWith('index.html') || p.endsWith('/')) return 'main';
     if (p.endsWith('health.html')) return 'health';
     if (p.endsWith('gym.html')) return 'fitness';
-    return 'main'; // index.html, /, or anything else falls back to main
+    return 'more'; // caffeine, nutrition, nova, avatar, water, anything else
   }
 
   function injectStyleAndHTML() {
@@ -300,6 +350,12 @@ body.topbar-modal-open {
     bottomWrap.innerHTML = bottombarHtml.trim();
     document.body.appendChild(bottomWrap.firstChild);
 
+    // Quick Log hub (sheet + backdrop), appended after the bottom bar.
+    const qlWrap = document.createElement('div');
+    qlWrap.innerHTML = quickLogHtml.trim();
+    document.body.appendChild(qlWrap.firstChild);
+    wireQuickLog();
+
     // Highlight the active bottom tab.
     const active = currentPageKey();
     document.querySelectorAll('.bottombar-tab').forEach((t) => {
@@ -314,6 +370,31 @@ body.topbar-modal-open {
     // Reserve room above the fixed bottom bar so page content can scroll
     // past it without being hidden.
     document.body.classList.add('has-bottombar');
+  }
+
+  // -------- Quick Log hub behavior --------
+  function wireQuickLog() {
+    const trigger = document.getElementById('quickLogTab');
+    const sheet = document.getElementById('qlSheet');
+    const backdrop = document.getElementById('qlBackdrop');
+    if (!trigger || !sheet || !backdrop) return;
+
+    function open() {
+      backdrop.classList.add('show');
+      sheet.classList.add('open');
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+    function close() {
+      backdrop.classList.remove('show');
+      sheet.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+    trigger.addEventListener('click', () => (sheet.classList.contains('open') ? close() : open()));
+    backdrop.addEventListener('click', close);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && sheet.classList.contains('open')) close();
+    });
+    // Close on navigation (any quick-log link navigates away anyway).
   }
 
   // -------- Active-date helpers (match the goals page 6 AM rollover) --------
@@ -492,23 +573,7 @@ body.topbar-modal-open {
     pushWaterMergedToSupabase(state);
   }
 
-  // -------- Mobile lockdown helpers --------
-  // Belt-and-suspenders zoom prevention — iOS Safari sometimes ignores
-  // user-scalable=no, so we also kill the gesture events directly.
-  function blockGesture(e) { e.preventDefault(); }
-  function lockGestures() {
-    document.addEventListener('gesturestart', blockGesture, { passive: false });
-    document.addEventListener('gesturechange', blockGesture, { passive: false });
-    document.addEventListener('gestureend', blockGesture, { passive: false });
-    // Also kill the iOS double-tap-to-zoom on any tap.
-    let lastTouch = 0;
-    document.addEventListener('touchend', (e) => {
-      const now = Date.now();
-      if (now - lastTouch <= 300) e.preventDefault();
-      lastTouch = now;
-    }, { passive: false });
-  }
-
+  // -------- Modal scroll lock --------
   // Watch every known modal-bg / overlay class — when any one of them
   // gets `.show` or `.is-open`, lock the body scroll. When the last
   // one closes, unlock.
@@ -682,7 +747,6 @@ body.topbar-modal-open {
     const btn = document.getElementById('topbarWaterAdd');
     if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); addWater(); });
     render();
-    lockGestures();
     startModalLock();
     wireAuthUI();
 
