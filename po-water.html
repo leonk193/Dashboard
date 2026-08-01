@@ -64,30 +64,25 @@ const CONFIG = {
 <link rel="stylesheet" href="design.css">
 <link rel="stylesheet" href="components.css">
 <style>
+/* Phase 5 — restrained native. Flat obsidian, tonal surfaces, hairline
+   separators, one accent (ice blue) for interaction. No radial washes,
+   no glass blur, no glow, no gradient buttons. */
 :root {
-  --bg: #0a0a0b;
-  --bg-card: #111113;
-  --text-1: #ffffff;
-  --text-2: rgba(255,255,255,0.6);
-  --text-3: rgba(255,255,255,0.4);
-  --text-4: rgba(255,255,255,0.25);
-  --border: rgba(255,255,255,0.06);
-  --border-strong: rgba(255,255,255,0.14);
-  --good: #6ee7b7;
-  --warn: #fbbf24;
-  --bad: #ff8a8a;
-  --info: #7DD3FC;
-  --font: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, SF Mono, Menlo, Consolas, monospace;
-}
-* { box-sizing: border-box; }
-html, body {
-  margin: 0; padding: 0;
-  background: radial-gradient(ellipse 80% 60% at 50% 0%, #14141a 0%, #0a0a0b 60%);
-  color: var(--text-1);
-  font-family: var(--font);
-  -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
+  --accent: #7DD3FC;
+  --on-accent: #050506;
+  --bg-card: var(--surface-1);
+  --text-1: var(--text-primary);
+  --text-2: var(--text-secondary);
+  --text-3: var(--text-tertiary);
+  --text-4: var(--text-quaternary);
+  --border: var(--hairline);
+  --border-strong: var(--hairline-strong);
+  --good: var(--success);
+  --warn: var(--warning);
+  --bad: var(--danger);
+  --info: var(--data-blue);
+  --font: var(--font);
+  --font-mono: var(--font-mono);
 }
 .shell { max-width: 720px; margin: 0 auto; padding: 24px 16px 80px; }
 
@@ -161,85 +156,89 @@ html, body {
 
 /* ----- Card ----- */
 .card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 18px;
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
   padding: 22px 20px 18px;
-  margin-bottom: 14px;
+  margin-bottom: var(--gap);
+  box-shadow: var(--shadow-1);
 }
 
 /* ----- Water hero ----- */
 .water-label {
-  font-size: 10px; letter-spacing: 0.20em; font-weight: 700;
-  color: var(--text-3); margin-bottom: 8px; text-transform: uppercase;
+  font-size: 12px; letter-spacing: 0.14em; font-weight: 700;
+  color: var(--text-tertiary); margin-bottom: 8px; text-transform: uppercase;
 }
 .water-row {
   display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;
 }
 .water-num {
-  font-size: 56px; font-weight: 700; letter-spacing: -0.03em;
+  font-size: 56px; font-weight: 800; letter-spacing: -0.03em;
   line-height: 1; font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
 }
 .water-target {
-  font-size: 18px; color: var(--text-3); font-weight: 500;
+  font-size: 18px; color: var(--text-tertiary); font-weight: 500;
 }
 
-/* Progress bar */
+/* Progress bar — flat track, solid accent fill, no glow */
 .water-bar-wrap { position: relative; margin: 14px 0 22px; }
 .water-bar-track {
   position: relative; height: 28px; border-radius: 14px;
-  background: rgba(255,255,255,0.04);
+  background: var(--surface-2);
   overflow: hidden;
 }
 .water-bar-fill {
   position: absolute; top: 0; bottom: 0; left: 0;
   border-radius: 14px;
-  background: linear-gradient(90deg, var(--info), var(--good));
-  transition: width 0.4s ease;
-  box-shadow: 0 0 18px rgba(110,231,183,0.18);
+  background: var(--accent);
+  /* width driven inline by JS; no transition → no layout thrash */
 }
 .water-bar-fill.over {
-  background: linear-gradient(90deg, var(--good), var(--warn));
+  background: var(--success);
 }
 .water-bar-zone {
   position: absolute; top: 0; bottom: 0;
-  width: 1px; background: rgba(255,255,255,0.18);
+  width: 1px; background: var(--hairline-strong);
 }
 .water-bar-labels {
   display: flex; justify-content: space-between;
   margin-top: 6px;
-  font-size: 10px; color: var(--text-3);
+  font-size: 11px; color: var(--text-tertiary);
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 .water-bar-labels .water-zone-name {
-  color: var(--good); font-weight: 700; letter-spacing: 0.10em;
+  color: var(--success); font-weight: 700; letter-spacing: 0.10em;
   text-transform: lowercase;
 }
 
-/* Action row */
+/* Action row — 44px thumb targets, solid accent primary */
 .water-actions {
   display: grid; grid-template-columns: 56px 1fr; gap: 10px; align-items: stretch;
 }
 .water-minus-btn {
-  background: rgba(255,255,255,0.06);
-  border: none; border-radius: 16px;
-  color: var(--text-1);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
   font-size: 22px; font-weight: 700;
   cursor: pointer;
+  min-height: 52px;
   -webkit-tap-highlight-color: transparent;
 }
-.water-minus-btn:hover { background: rgba(255,255,255,0.10); }
+.water-minus-btn:hover { background: var(--surface-3); }
 .water-minus-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .water-plus-btn {
-  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
-  color: #0a0a0b; border: none; border-radius: 16px;
-  font-family: inherit; font-size: 16px; font-weight: 700;
+  background: var(--accent);
+  color: var(--on-accent); border: none; border-radius: var(--radius-md);
+  font-family: inherit; font-size: 16px; font-weight: 800;
   cursor: pointer; padding: 16px;
+  min-height: 52px;
   display: flex; align-items: center; justify-content: center; gap: 8px;
   -webkit-tap-highlight-color: transparent;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 4px 14px rgba(0,0,0,0.40);
 }
-.water-plus-btn:hover { transform: translateY(-1px); }
+.water-plus-btn:hover { filter: brightness(1.06); }
 .water-plus-btn:active { transform: scale(0.98); }
 
 .water-helper {
@@ -321,7 +320,7 @@ html, body {
 /* ----- Modal ----- */
 .modal-bg {
   display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+  background: var(--overlay);
   z-index: 100; align-items: center; justify-content: center; padding: 20px;
 }
 .modal-bg.show { display: flex; }
@@ -348,7 +347,7 @@ html, body {
   letter-spacing: 0.06em; text-transform: uppercase;
 }
 .field input[type="number"], .field input[type="text"], .field select {
-  background: rgba(0,0,0,0.28);
+  background: var(--input-fill);
   border: 1px solid var(--border);
   color: var(--text-1);
   font-family: inherit; font-size: 14px;
@@ -375,19 +374,19 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 .seg button.active {
-  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
-  color: #0a0a0b;
+  background: var(--surface-3);
+  color: var(--text-primary);
 }
 
 /* ----- Stimulant search ----- */
 .search-wrap { position: relative; }
 .search-input {
-  width: 100%; background: rgba(0,0,0,0.28);
+  width: 100%; background: var(--input-fill);
   border: 1px solid var(--border);
   color: var(--text-1); font-family: inherit; font-size: 14px;
   padding: 11px 14px; border-radius: 10px; outline: none;
 }
-.search-input:focus { border-color: rgba(110,231,183,0.40); }
+.search-input:focus { border-color: var(--hairline-focus); }
 .search-results {
   position: absolute; top: calc(100% + 4px); left: 0; right: 0;
   background: var(--bg-card);
@@ -460,13 +459,16 @@ html, body {
 .btn-primary {
   width: 100%; padding: 13px;
   border: none;
-  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
-  color: #0a0a0b; border-radius: 12px;
-  font-family: inherit; font-size: 14px; font-weight: 700;
+  background: var(--accent);
+  color: var(--on-accent); border-radius: var(--radius-md);
+  font-family: inherit; font-size: 14px; font-weight: 800;
   cursor: pointer;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 4px 14px rgba(0,0,0,0.40);
+  min-height: 48px;
   -webkit-tap-highlight-color: transparent;
+  transition: filter 0.15s, transform 0.1s;
 }
+.btn-primary:hover { filter: brightness(1.06); }
+.btn-primary:active { transform: scale(0.98); }
 .btn-secondary {
   padding: 11px 16px;
   border: 1px solid var(--border);
