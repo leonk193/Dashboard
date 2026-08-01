@@ -1,0 +1,174 @@
+/* ============================================================
+   Leon Dashboard — Shared Design System (restrained native)
+   ------------------------------------------------------------
+   Phase 1 of the redesign. Canonical tokens + base layer.
+   Load AFTER reset/normalize, BEFORE page styles.
+
+   Contract:
+   - Dark by design. No light mode.
+   - Obsidian void, flat. No ambient washes, grain, glass blur, glow.
+   - One domain accent per page for interaction; a separate data
+     palette for charts. Status colors only where state is real.
+   - Every metric in tabular-nums mono. Labels in readable sentence
+     case (no decorative letter-spaced mono uppercase).
+   - 44px touch targets. :focus-visible everywhere.
+   ============================================================ */
+
+:root {
+  /* ---- Surfaces (tonal elevation, no blur) ---- */
+  --bg:            #050506;                       /* void */
+  --bg-deep:       #050506;
+  --surface-0:     #0A0A0B;                       /* bars, sheets */
+  --surface-1:     #101012;                       /* cards */
+  --surface-2:     #17171A;                       /* raised / active */
+  --surface-3:     #1E1E22;                       /* overlay, hover-strong */
+  --overlay:       rgba(0, 0, 0, 0.6);
+  --input-fill:    #0D0D0F;
+
+  /* ---- Hairlines ---- */
+  --hairline:          rgba(255, 255, 255, 0.06);
+  --hairline-strong:   rgba(255, 255, 255, 0.14);
+  --hairline-focus:    rgba(255, 255, 255, 0.34);
+
+  /* ---- Ink ---- */
+  --text-primary:   #FAFAFA;
+  --text-secondary: #B8B6B0;
+  --text-tertiary:  #76746E;
+  --text-quaternary:#4D4B47;
+
+  /* ---- Status trio ---- */
+  --success:        #5BD89A;
+  --warning:        #E8B84D;
+  --danger:         #FF6B6B;
+
+  /* ---- Per-domain accents (interaction) ---- */
+  --accent:         #6BE3A4;                      /* home default; page overrides */
+  --accent-water:   #7DD3FC;
+  --accent-health:  #1D9E75;
+  --accent-fitness: #7C5CFF;
+  --accent-nutrition:#FBBF24;
+  --accent-finance: #E07658;
+  --accent-caffeine:#C9A36B;
+  --accent-nova:    #A78BFA;
+
+  /* ---- Data palette (charts) — readable on dark ---- */
+  --data-blue:      #7DD3FC;
+  --data-green:     #6BE3A4;
+  --data-emerald:   #1D9E75;
+  --data-violet:    #7C5CFF;
+  --data-amber:     #FBBF24;
+  --data-gold:      #E8B84D;
+  --data-pink:      #E86B8D;
+  --data-ember:     #E07658;
+  --data-brass:     #C9A36B;
+  --data-lavender:  #A78BFA;
+  --data-teal:      #5BD89A;
+
+  /* Legacy aliases (kept so old component CSS reads clean during
+     migration; deleted as each page lands on components.css). */
+  --bg-card:        var(--surface-1);
+  --bg-secondary:   var(--surface-1);
+  --bg-input:       var(--input-fill);
+  --bg-input-focus: var(--surface-2);
+  --border:         var(--hairline);
+  --border-soft:    var(--hairline);
+  --border-strong:  var(--hairline-strong);
+  --text-1:         var(--text-primary);
+  --text-2:         var(--text-secondary);
+  --text-3:         var(--text-tertiary);
+  --text-4:         var(--text-quaternary);
+  --good:           var(--success);
+  --warn:           var(--warning);
+  --bad:            var(--danger);
+
+  /* ---- Typography ---- */
+  --font:    -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* ---- Radii (fixed set) ---- */
+  --radius-sm:     10px;
+  --radius-md:     14px;
+  --radius-lg:     18px;
+  --radius-full:   999px;
+
+  /* ---- Shadow (one soft ambient, structural only) ---- */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.5);
+
+  /* ---- Motion ---- */
+  --ease:    cubic-bezier(0.22, 1, 0.36, 1);
+  --dur:     180ms;
+
+  /* ---- Layout ---- */
+  --gutter:        20px;
+  --card-pad:      18px;
+  --gap:           14px;
+  --section:       18px;
+  --page-max:      1100px;
+  --page-max-narrow: 600px;
+
+  /* ---- Accent-aware foreground (set per accent on use) ---- */
+  --on-accent: #050506;
+}
+
+/* ---- Base ---- */
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding: max(24px, env(safe-area-inset-top)) var(--gutter) 80px;
+}
+/* Flat void: the old drifting washes + grain are intentionally gone. */
+body::before, body::after { content: none; }
+
+h1, h2, h3, h4 { margin: 0; color: var(--text-primary); font-weight: 700; letter-spacing: -0.02em; }
+p { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+
+/* Focus visibility — never outline:none without a replacement */
+:focus-visible {
+  outline: 2px solid var(--hairline-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---- Typography primitives ---- */
+.t-display { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
+.t-title   { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.t-section { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.t-body    { font-size: 14px; }
+.t-small   { font-size: 13px; }
+.t-caption { font-size: 12px; }
+.t-num     { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.t-label   { font-size: 12px; font-weight: 600; color: var(--text-tertiary); }
+.t-mono    { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.t-lh1     { line-height: 1; }
+
+/* ---- Status text ---- */
+.t-success { color: var(--success); }
+.t-warning { color: var(--warning); }
+.t-danger  { color: var(--danger); }
+
+/* ---- Reduced motion / high contrast ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+@media (forced-colors: active) {
+  :focus-visible { outline: 3px solid CanvasText; }
+}
