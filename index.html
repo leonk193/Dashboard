@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#050506">
-<title>Dashboard</title>
+<title>Leon Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="sync.js" defer></script>
@@ -14,325 +14,231 @@
 <script src="topbar.js" defer></script>
 
 <link rel="stylesheet" href="design.css">
+<link rel="stylesheet" href="components.css">
 <style>
-/* ===== Shared design tokens (same as the rest of the dashboard) ===== */
-:root {
-  --text-primary: #FAFAFA;
-  --text-secondary: #B8B6B0;
-  --text-tertiary: #76746E;
-  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-}
-* { box-sizing: border-box; }
-html, body {
-  margin: 0; padding: 0;
-  background: #050506;
-  color: var(--text-secondary);
-  font-family: var(--font);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-body {
-  min-height: 100vh; position: relative; overflow-x: hidden;
-  padding: max(28px, env(safe-area-inset-top)) 20px 60px;
-}
-/* Soft drifting glow + dot texture (matches the other pages). */
-body::before {
-  content: ''; position: fixed; inset: 0;
-  background:
-    radial-gradient(circle at 82% 14%, rgba(224,118,88,0.16), transparent 45%),
-    radial-gradient(circle at 18% 90%, rgba(180,180,200,0.06), transparent 50%);
-  filter: blur(40px); pointer-events: none; z-index: -2;
-  animation: drift 36s ease-in-out infinite alternate;
-}
-body::after {
-  content: ''; position: fixed; inset: 0;
-  background-image: radial-gradient(rgba(255,255,255,0.014) 1px, transparent 1px);
-  background-size: 3px 3px; pointer-events: none; z-index: -1;
-}
-@keyframes drift { 0%{transform:translate3d(0,0,0)} 100%{transform:translate3d(-22px,14px,0)} }
+/* Phase 4 — Home as daily cockpit. Restrained-native: flat obsidian,
+   tonal surfaces, hairline separators, one accent (mint) for interaction.
+   No ambient washes, no glass blur, no glow, no gradient titles. */
+:root { --accent: #6BE3A4; --on-accent: #050506; }
 
-.page { max-width: 1100px; margin: 0 auto; }
-.dash-title {
-  margin: 0 0 18px; font-size: 28px; font-weight: 700; letter-spacing: -0.025em;
-  background: linear-gradient(180deg, #FFFFFF 0%, #C7C4BC 120%);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent; color: transparent;
-}
-@media (max-width: 480px) { .dash-title { font-size: 22px; } }
-
-/* ===== BENTO GRID ===== */
-.bento {
+/* ---- Summary strip (today at a glance) ---- */
+.summary {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-auto-rows: 168px;
-  grid-auto-flow: dense;
-  gap: 14px;
+  gap: var(--gap);
+  margin: 18px 0;
 }
-.tile {
-  --accent: #6BE3A4;                 /* each tile overrides this */
-  position: relative; overflow: hidden;
-  display: flex; flex-direction: column;
-  padding: 20px;
-  border-radius: 18px;
+.summary-card {
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: 16px 14px;
+  display: flex; flex-direction: column; gap: 8px;
+  min-height: 96px;
+}
+.summary-card .s-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.summary-card .s-value {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 24px; font-weight: 800; letter-spacing: -0.03em; line-height: 1;
+  color: var(--text-primary);
+}
+.summary-card .s-sub { font-size: 12px; color: var(--text-tertiary); }
+.summary-card.water    { border-top: 2px solid var(--data-blue); }
+.summary-card.stack    { border-top: 2px solid var(--data-emerald); }
+.summary-card.caffeine { border-top: 2px solid var(--data-gold); }
+.summary-card.macros   { border-top: 2px solid var(--data-amber); }
+.summary-card .s-value.good   { color: var(--success); }
+.summary-card .s-value.warn   { color: var(--warning); }
+.summary-card .s-value.danger { color: var(--danger); }
+.summary-card .s-value.accent { color: var(--accent); }
+
+@media (max-width: 720px) { .summary { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 380px) { .summary { grid-template-columns: 1fr 1fr; gap: 10px; } }
+
+/* ---- Domain grid (flat tiles, no glow) ---- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+}
+.grid-tile {
+  position: relative;
+  display: flex; flex-direction: column; justify-content: space-between;
+  gap: 10px;
+  min-height: 132px;
+  padding: 18px;
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
   text-decoration: none;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
 }
-/* The "its own style" bit — a faint accent glow per tile. */
-.tile::before {
-  content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(circle at 78% 18%,
-              color-mix(in srgb, var(--accent) 22%, transparent), transparent 55%);
-  opacity: 0.7; transition: opacity 0.18s ease;
+.grid-tile:active { transform: scale(0.98); }
+.grid-tile:hover { border-color: var(--hairline-strong); background: var(--surface-2); }
+.grid-tile.big  { grid-column: span 2; grid-row: span 2; min-height: 278px; }
+.grid-tile.wide { grid-column: span 2; }
+.grid-tile .t-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.grid-tile .t-name {
+  font-size: 17px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em;
 }
-.tile:hover {
-  transform: translateY(-3px);
-  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
-  box-shadow: 0 16px 48px rgba(0,0,0,0.55);
+.grid-tile.big .t-name { font-size: 22px; }
+.grid-tile .t-sub { font-size: 13px; color: var(--text-tertiary); }
+.grid-tile .t-arrow { color: var(--text-tertiary); flex-shrink: 0; font-size: 15px; transition: transform 0.15s; }
+.grid-tile:hover .t-arrow { transform: translateX(3px); }
+.grid-tile .t-ico {
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--tc) 14%, transparent);
+  color: var(--tc);
 }
-.tile:hover::before { opacity: 1; }
-
-/* Tile sizes */
-.tile.big  { grid-column: span 2; grid-row: span 2; }
-.tile.wide { grid-column: span 2; }
-
-/* Tile contents */
-.tile-top { display: flex; align-items: flex-start; justify-content: space-between; }
-.tile-num {
-  font-family: var(--font-mono); font-size: 12px; font-weight: 600;
-  letter-spacing: 0.08em; color: var(--text-tertiary);
-}
-.tile-emoji {
-  font-size: 26px; line-height: 1;
-  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 60%, transparent));
-}
-.tile-spacer { flex: 1; }
-.tile-title {
-  font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
-  color: var(--text-primary); margin: 0 0 4px;
-}
-.tile.big .tile-title { font-size: 28px; }
-.tile-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.tile-sub {
-  font-size: 13px; color: var(--text-tertiary);
-}
-.tile-arrow {
-  font-size: 18px; color: var(--accent);
-  transition: transform 0.18s ease; flex-shrink: 0;
-}
-.tile:hover .tile-arrow { transform: translateX(4px); }
-
-/* ===== Responsive: collapse the bento on small screens ===== */
+.grid-tile .t-ico svg { width: 20px; height: 20px; }
 @media (max-width: 720px) {
-  .bento { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 150px; }
-  .tile.big { grid-column: span 2; grid-row: span 1; }
-  .tile.big .tile-title { font-size: 22px; }
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .grid-tile.big { grid-column: span 2; grid-row: span 1; min-height: 132px; }
+  .grid-tile.big .t-name { font-size: 17px; }
 }
 @media (max-width: 440px) {
-  body { padding: max(20px, env(safe-area-inset-top)) 14px 50px; }
-  .bento { grid-template-columns: 1fr; grid-auto-rows: 132px; }
-  .tile.big, .tile.wide { grid-column: span 1; }
+  .grid { grid-template-columns: 1fr; }
+  .grid-tile, .grid-tile.big, .grid-tile.wide { grid-column: span 1; }
+  body { padding: max(20px, env(safe-area-inset-top)) 14px 90px; }
 }
-
-/* ===== Header row + gear ===== */
-.hub-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
-.hub-head .dash-title { margin: 0; }
-.gear-btn {
-  width: 42px; height: 42px; flex-shrink: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 12px; border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(255,255,255,0.04); color: var(--text-secondary);
-  cursor: pointer; transition: background 0.15s, color 0.15s, transform 0.1s;
-  -webkit-tap-highlight-color: transparent;
-}
-.gear-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
-.gear-btn:active { transform: scale(0.94) rotate(35deg); }
-.gear-btn svg { width: 22px; height: 22px; }
-
-/* ===== Settings modal ===== */
-.modal-bg {
-  position: fixed; inset: 0; z-index: 120; display: none;
-  align-items: center; justify-content: center; padding: 20px;
-  background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-}
-.modal-bg.show { display: flex; }
-.modal {
-  width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto;
-  background: #0e0e10; border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 18px; padding: 22px; box-shadow: 0 24px 70px rgba(0,0,0,0.6);
-}
-.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-.modal-title { font-size: 18px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
-.modal-close { border: 0; background: transparent; color: var(--text-tertiary); font-size: 26px; line-height: 1; cursor: pointer; padding: 0 4px; }
-.modal-close:hover { color: var(--text-primary); }
-.field { margin-bottom: 14px; }
-.field-label { font-size: 11px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 7px; display: block; }
-.field-row { display: flex; gap: 8px; align-items: center; }
-.set-input {
-  flex: 1; min-width: 0; padding: 11px 13px;
-  border: 1px solid rgba(255,255,255,0.08); border-radius: 11px;
-  background: rgba(0,0,0,0.3); color: var(--text-primary);
-  font-family: inherit; font-size: 14px; outline: none; transition: border-color 0.2s;
-}
-.set-input:focus { border-color: rgba(255,255,255,0.28); }
-.seg { display: inline-flex; border: 1px solid rgba(255,255,255,0.10); border-radius: 11px; overflow: hidden; flex-shrink: 0; }
-.seg button { border: 0; background: transparent; color: var(--text-tertiary); font-family: inherit; font-size: 13px; font-weight: 600; padding: 11px 14px; cursor: pointer; transition: background 0.15s, color 0.15s; }
-.seg button.on { background: rgba(255,255,255,0.12); color: var(--text-primary); }
-.set-save {
-  width: 100%; margin-top: 6px; padding: 13px; border: 0; border-radius: 12px;
-  background: linear-gradient(180deg,#FFFFFF,#E8E5DD); color: #0A0A0B;
-  font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 8px 22px rgba(0,0,0,0.25);
-  transition: filter 0.15s, transform 0.1s;
-}
-.set-save:hover { filter: brightness(1.05); }
-.set-save:active { transform: translateY(1px); }
-.set-status { text-align: center; font-size: 12px; color: var(--success); min-height: 16px; margin-top: 8px; }
-.section-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 20px 0 14px; }
-.whoop-box { margin-top: 8px; padding: 16px; border-radius: 14px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.06); }
-.whoop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.whoop-status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--text-primary); }
-.whoop-status .dot { width: 8px; height: 8px; border-radius: 50%; background: #76746E; }
-.whoop-status.on .dot { background: #6BE3A4; box-shadow: 0 0 8px rgba(107,227,164,0.7); }
-.whoop-sync { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); text-align: right; }
-.whoop-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 14px; }
-.whoop-stat { text-align: center; }
-.whoop-stat .v { font-size: 20px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1; }
-.whoop-stat .l { font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin-top: 5px; }
-.whoop-btn { width: 100%; margin-top: 14px; padding: 11px; border: 1px solid rgba(255,255,255,0.12); border-radius: 11px; background: transparent; color: var(--text-secondary); font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: background 0.15s, color 0.15s; }
-.whoop-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
 </style>
 </head>
-<body>
-<div class="page">
+<body data-nav="main">
 
-  <div class="hub-head">
-    <h1 class="dash-title">Leon Dashboard</h1>
-    <button class="gear-btn" id="settingsOpen" type="button" aria-label="Settings">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-      </svg>
+<div class="page" style="max-width:1100px;margin:0 auto">
+
+  <header class="hub-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <div>
+      <h1 class="dash-title" style="margin:0;font-size:26px;font-weight:800;letter-spacing:-0.03em;color:var(--text-primary)">Leon Dashboard</h1>
+      <p class="t-small" id="todayLabel" style="color:var(--text-tertiary);margin-top:2px"></p>
+    </div>
+    <button class="btn btn-ghost" id="settingsOpen" type="button" aria-label="Settings" style="width:44px;height:44px;padding:0;justify-content:center">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
-  </div>
+  </header>
 
-  <div class="bento">
+  <!-- Today at a glance -->
+  <section class="summary" aria-label="Today's summary">
+    <div class="summary-card water">
+      <span class="s-label">Water</span>
+      <span class="s-value" id="sumWater">—</span>
+      <span class="s-sub" id="sumWaterSub">tracking</span>
+    </div>
+    <div class="summary-card stack">
+      <span class="s-label">Stack</span>
+      <span class="s-value" id="sumStack">—</span>
+      <span class="s-sub" id="sumStackSub">supplements</span>
+    </div>
+    <div class="summary-card caffeine">
+      <span class="s-label">Caffeine</span>
+      <span class="s-value" id="sumCaf">—</span>
+      <span class="s-sub" id="sumCafSub">mg today</span>
+    </div>
+    <div class="summary-card macros">
+      <span class="s-label">Goals</span>
+      <span class="s-value" id="sumGoals">—</span>
+      <span class="s-sub" id="sumGoalsSub">daily goals</span>
+    </div>
+  </section>
 
-    <!-- Big tile -->
-    <a class="tile big" href="main.html" style="--accent:#6BE3A4">
-      <div class="tile-top">
-        <span class="tile-num">·01</span>
-        <span class="tile-emoji">🏠</span>
+  <!-- Domain grid -->
+  <div class="grid">
+
+    <a class="grid-tile big" href="main.html" style="--tc:#6BE3A4">
+      <div class="t-top">
+        <span class="t-name">Main</span>
+        <span class="t-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/></svg>
+        </span>
       </div>
-      <div class="tile-spacer"></div>
-      <h2 class="tile-title">Main</h2>
-      <div class="tile-foot">
-        <span class="tile-sub">Goals & daily plan</span>
-        <span class="tile-arrow">→</span>
+      <div>
+        <div class="t-sub">Goals, to-dos & daily plan</div>
+        <div class="t-small" style="color:var(--text-tertiary);margin-top:4px" id="tileMain">—</div>
       </div>
+      <span class="t-arrow" aria-hidden="true">→</span>
     </a>
 
-    <!-- Wide tile -->
-    <a class="tile wide" href="gym.html" style="--accent:#7DD3FC">
-      <div class="tile-top">
-        <span class="tile-num">·02</span>
-        <span class="tile-emoji">💪</span>
+    <a class="grid-tile wide" href="po-water.html" style="--tc:#7DD3FC">
+      <div class="t-top">
+        <span class="t-name">Water</span>
+        <span class="t-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.6 6 11a6 6 0 1 1-12 0c0-3.4 2.5-6.8 6-11z"/><path d="M9.5 14a2.6 2.6 0 0 0 2.5 2.6"/></svg>
+        </span>
       </div>
-      <div class="tile-spacer"></div>
-      <h2 class="tile-title">Fitness</h2>
-      <div class="tile-foot">
-        <span class="tile-sub">Workouts, splits, sessions</span>
-        <span class="tile-arrow">→</span>
-      </div>
+      <span class="t-sub">Hydration</span>
+      <span class="t-arrow" aria-hidden="true">→</span>
     </a>
 
-    <!-- Small tile -->
-    <a class="tile" href="health.html" style="--accent:#A7F3D0">
-      <div class="tile-top">
-        <span class="tile-num">·03</span>
-        <span class="tile-emoji">💊</span>
+    <a class="grid-tile wide" href="gym.html" style="--tc:#7C5CFF">
+      <div class="t-top">
+        <span class="t-name">Fitness</span>
+        <span class="t-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 6.5 17.5 17.5"/><path d="M4 8 2.5 9.5 6.5 13.5 8 12"/><path d="M20 8l1.5 1.5-4 4L16 12"/><path d="M6.5 4 8 5.5"/><path d="M17.5 16 19 17.5"/></svg>
+        </span>
       </div>
-      <div class="tile-spacer"></div>
-      <h2 class="tile-title">Health</h2>
-      <div class="tile-foot">
-        <span class="tile-sub">Supplements & vitals</span>
-        <span class="tile-arrow">→</span>
-      </div>
+      <span class="t-sub">Workouts, splits, sessions</span>
+      <span class="t-arrow" aria-hidden="true">→</span>
     </a>
 
-    <!-- Small tile -->
-    <a class="tile" href="po-water.html" style="--accent:#60A5FA">
-      <div class="tile-top">
-        <span class="tile-num">·04</span>
-        <span class="tile-emoji">💧</span>
+    <a class="grid-tile" href="health.html" style="--tc:#1D9E75">
+      <div class="t-top">
+        <span class="t-name">Health</span>
+        <span class="t-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.8h3.4a1 1 0 0 1 1 1V8l3.5 3.5a1 1 0 0 1 0 1.4L14.7 16.4v3.2a1 1 0 0 1-1 1h-3.4a1 1 0 0 1-1-1v-3.2l-3.5-3.5a1 1 0 0 1 0-1.4L9.3 8V4.8a1 1 0 0 1 1-1z"/><path d="M12 8l-2 4h3l-2 4"/></svg>
+        </span>
       </div>
-      <div class="tile-spacer"></div>
-      <h2 class="tile-title">Water</h2>
-      <div class="tile-foot">
-        <span class="tile-sub">Hydration</span>
-        <span class="tile-arrow">→</span>
-      </div>
+      <span class="t-sub">Supplements & vitals</span>
+      <span class="t-arrow" aria-hidden="true">→</span>
     </a>
 
-    <!-- Wide tile -->
-    <a class="tile wide" href="finance.html" style="--accent:#F2C063">
-      <div class="tile-top">
-        <span class="tile-num">·05</span>
-        <span class="tile-emoji">📊</span>
+    <a class="grid-tile" href="nutrition.html" style="--tc:#FBBF24">
+      <div class="t-top">
+        <span class="t-name">Nutrition</span>
+        <span class="t-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3c0 3-1.5 5-1.5 8 0 4 3 8 7 8s7-4 7-8c0-3-1.5-5-1.5-8"/><path d="M12 3v16"/><path d="M8.5 3c0 3-1 5-1 7"/><path d="M15.5 3c0 3 1 5 1 7"/></svg>
+        </span>
       </div>
-      <div class="tile-spacer"></div>
-      <h2 class="tile-title">Finance</h2>
-      <div class="tile-foot">
-        <span class="tile-sub">Net worth & spending</span>
-        <span class="tile-arrow">→</span>
-      </div>
+      <span class="t-sub">Track meals & macros</span>
+      <span class="t-arrow" aria-hidden="true">→</span>
     </a>
 
-    <!-- Small tile -->
-    <a class="tile" href="caffeine.html" style="--accent:#C9A36B">
-      <div class="tile-top">
-        <span class="tile-num">·06</span>
-        <span class="tile-emoji">☕</span>
+    <a class="grid-tile" href="finance.html" style="--tc:#E07658">
+      <div class="t-top">
+        <span class="t-name">Finance</span>
+        <span class="t-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V10"/><path d="M9.5 19V5"/><path d="M15 19v-7"/><path d="M20 19V8"/><rect x="2.5" y="19.5" width="19" height="2.5"/></svg>
+        </span>
       </div>
-      <div class="tile-spacer"></div>
-      <h2 class="tile-title">Caffeine</h2>
-      <div class="tile-foot">
-        <span class="tile-sub">Intake & timing</span>
-        <span class="tile-arrow">→</span>
-      </div>
+      <span class="t-sub">Net worth & spending</span>
+      <span class="t-arrow" aria-hidden="true">→</span>
     </a>
 
-    <!-- Wide tile -->
-    <a class="tile wide" href="nova-lite.html" style="--accent:#A78BFA">
-      <div class="tile-top">
-        <span class="tile-num">·07</span>
-        <span class="tile-emoji">🧠</span>
+    <a class="grid-tile" href="caffeine.html" style="--tc:#C9A36B">
+      <div class="t-top">
+        <span class="t-name">Caffeine</span>
+        <span class="t-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h11v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z"/><path d="M16 9h1.5a2 2 0 0 1 2 2v.5a2 2 0 0 1-2 2H16"/><path d="M8 4.5 7 6.5"/><path d="M12 4.5 11 6.5"/><path d="M16 4.5 15 6.5"/></svg>
+        </span>
       </div>
-      <div class="tile-spacer"></div>
-      <h2 class="tile-title">Nova</h2>
-      <div class="tile-foot">
-        <span class="tile-sub">Your AI mentor</span>
-        <span class="tile-arrow">→</span>
-      </div>
+      <span class="t-sub">Intake & timing</span>
+      <span class="t-arrow" aria-hidden="true">→</span>
     </a>
 
-    <!-- Tile for Nutrition -->
-    <a class="tile" href="nutrition.html" style="--accent:#FBBF24">
-      <div class="tile-top">
-        <span class="tile-num">·08</span>
-        <span class="tile-emoji">🥗</span>
+    <a class="grid-tile" href="nova-lite.html" style="--tc:#A78BFA">
+      <div class="t-top">
+        <span class="t-name">Nova</span>
+        <span class="t-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 3.5 2 4.5 4.5 5-2.5.5-3.5 1.5-4.5 5-1-3.5-2-4.5-4.5-5C10 7.5 11 6.5 12 3z"/><path d="M18.5 14c.6 2 1.2 2.6 2.5 3-1.3.4-1.9 1-2.5 3-.6-2-1.2-2.6-2.5-3 1.3-.4 1.9-1 2.5-3z"/></svg>
+        </span>
       </div>
-      <div class="tile-spacer"></div>
-      <h2 class="tile-title">Nutrition</h2>
-      <div class="tile-foot">
-        <span class="tile-sub">Track meals & macros</span>
-        <span class="tile-arrow">→</span>
-      </div>
+      <span class="t-sub">Your AI mentor</span>
+      <span class="t-arrow" aria-hidden="true">→</span>
     </a>
 
   </div>
@@ -349,8 +255,8 @@ body::after {
     <div class="field">
       <label class="field-label">Height</label>
       <div class="field-row">
-        <input class="set-input" id="heightA" type="number" min="0" inputmode="decimal" placeholder="cm">
-        <input class="set-input" id="heightB" type="number" min="0" inputmode="decimal" placeholder="in" style="display:none">
+        <input class="input" id="heightA" type="number" min="0" inputmode="decimal" placeholder="cm">
+        <input class="input" id="heightB" type="number" min="0" inputmode="decimal" placeholder="in" style="display:none">
         <div class="seg" id="heightUnitSeg">
           <button type="button" data-u="cm" class="on">cm</button>
           <button type="button" data-u="ft">ft/in</button>
@@ -361,7 +267,7 @@ body::after {
     <div class="field">
       <label class="field-label">Weight</label>
       <div class="field-row">
-        <input class="set-input" id="weight" type="number" min="0" inputmode="decimal" placeholder="weight">
+        <input class="input" id="weight" type="number" min="0" inputmode="decimal" placeholder="weight">
         <div class="seg" id="weightUnitSeg">
           <button type="button" data-u="kg" class="on">kg</button>
           <button type="button" data-u="lb">lb</button>
@@ -371,7 +277,7 @@ body::after {
 
     <div class="field">
       <label class="field-label">Age</label>
-      <input class="set-input" id="age" type="number" min="0" inputmode="numeric" placeholder="years">
+      <input class="input" id="age" type="number" min="0" inputmode="numeric" placeholder="years">
     </div>
 
     <div class="field">
@@ -384,26 +290,26 @@ body::after {
 
     <div class="field">
       <label class="field-label">Active hours / week</label>
-      <input class="set-input" id="activity" type="number" min="0" inputmode="decimal" placeholder="e.g. 5">
+      <input class="input" id="activity" type="number" min="0" inputmode="decimal" placeholder="e.g. 5">
     </div>
 
-    <button class="set-save" id="settingsSave" type="button">Save</button>
-    <div class="set-status" id="settingsStatus"></div>
+    <button class="btn btn-primary btn-block" id="settingsSave" type="button">Save</button>
+    <div class="set-status" id="settingsStatus" style="text-align:center;font-size:12px;color:var(--success);min-height:16px;margin-top:8px"></div>
 
-    <div class="section-divider"></div>
+    <div style="height:1px;background:var(--hairline);margin:20px 0 14px"></div>
 
     <label class="field-label">WHOOP</label>
-    <div class="whoop-box">
-      <div class="whoop-row">
-        <span class="whoop-status" id="whStatus"><span class="dot"></span><span id="whStatusText">Not connected</span></span>
-        <span class="whoop-sync" id="whSync"></span>
+    <div class="card" style="background:var(--surface-2);padding:14px;margin-top:6px">
+      <div class="row" style="min-height:36px">
+        <span class="status" id="whStatus"><span class="status-dot"></span><span id="whStatusText">Not connected</span></span>
+        <span class="t-small" id="whSync" style="color:var(--text-tertiary)"></span>
       </div>
-      <div class="whoop-stats" id="whStats" style="display:none">
-        <div class="whoop-stat"><div class="v" id="whRec">—</div><div class="l">Recovery</div></div>
-        <div class="whoop-stat"><div class="v" id="whSleep">—</div><div class="l">Sleep</div></div>
-        <div class="whoop-stat"><div class="v" id="whRhr">—</div><div class="l">Rest HR</div></div>
+      <div class="grid" id="whStats" style="display:none;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px">
+        <div class="stat"><div class="v" style="font-size:22px" id="whRec">—</div><div class="l">Recovery</div></div>
+        <div class="stat"><div class="v" style="font-size:22px" id="whSleep">—</div><div class="l">Sleep</div></div>
+        <div class="stat"><div class="v" style="font-size:22px" id="whRhr">—</div><div class="l">Rest HR</div></div>
       </div>
-      <button class="whoop-btn" id="whAction" type="button">Sync now</button>
+      <button class="btn btn-ghost btn-block" id="whAction" type="button" style="margin-top:10px">Sync now</button>
     </div>
   </div>
 </div>
@@ -412,23 +318,103 @@ body::after {
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
+
+  /* ---------- Today label ---------- */
+  const now = new Date();
+  $('todayLabel').textContent = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+
+  /* ---------- Active-date (6 AM rollover, matches goals/stack) ---------- */
+  function activeDateKey() {
+    const n = new Date();
+    const d = new Date(n);
+    if (n.getHours() < 6) d.setDate(d.getDate() - 1);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function calendarDateKey() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function loadJSON(k, f) { try { return JSON.parse(localStorage.getItem(k)) || f; } catch (e) { return f; } }
+
+  /* ---------- Summary strip (same keys the trackers use — no logic change) ---------- */
+  function renderSummary() {
+    // Water — same read as topbar getWaterProgress
+    const w = loadJSON('po_water_v1', null);
+    if (w) {
+      const today = calendarDateKey();
+      const done = (w.logs || {})[today] || 0;
+      const p = w.profile || {};
+      const wKg = w.weightUnit === 'lb' ? (p.weightKg || 0) / 2.20462 : (p.weightKg || 0);
+      const base = wKg * 35;
+      const exercise = (p.activityHrsPerWeek || 0) / 7 * 500;
+      const caffeine = Math.max(0, (w.caffeineMgPerDay || 0) - 200) * 1.5;
+      const subs = (w.substances || []).reduce((s, x) => s + Math.max(0, ((x && x.dose != null ? x.dose : (x && x.defaultDose)) || 0) * ((x && x.mlPerUnit) || 0)), 0);
+      let adjust = 0;
+      if (p.sex === 'm') adjust += 200;
+      if ((p.age || 0) >= 50) adjust += 100;
+      const totalMl = base + exercise + caffeine + subs + adjust;
+      let uv;
+      if (w.unit === 'glass') uv = w.glassMl || 250;
+      else if (w.unit === 'oz') uv = 30;
+      else if (w.unit === 'ml') uv = 1;
+      else uv = w.bottleMl || 500;
+      const total = Math.max(1, Math.ceil(totalMl / uv));
+      $('sumWater').textContent = done + '/' + total;
+      $('sumWater').className = 's-value' + (done >= total ? ' good' : done >= total * 0.5 ? ' warn' : '');
+      $('sumWaterSub').textContent = w.unit === 'ml' ? 'ml today' : (w.unit === 'glass' ? 'glasses' : w.unit === 'oz' ? 'oz' : 'bottles');
+    } else {
+      $('sumWater').textContent = '—';
+    }
+
+    // Stack — same read as topbar getStackProgress
+    const items = loadJSON('stack:items', []);
+    const taken = loadJSON('stack:taken:' + activeDateKey(), {});
+    const total = Array.isArray(items) ? items.length : 0;
+    const done = total ? items.filter(i => i && taken[i.id]).length : 0;
+    $('sumStack').textContent = total ? done + '/' + total : '—';
+    $('sumStack').className = 's-value' + (total && done === total ? ' good' : '');
+    $('sumStackSub').textContent = total ? 'supplements' : 'no stack set';
+
+    // Caffeine — sum today's mg (caf:logs entries carry .mg)
+    const logs = loadJSON('caf:logs', {});
+    const cKey = activeDateKey();
+    const dayLogs = (logs[cKey] || []).filter(x => x && x.mg);
+    const mg = dayLogs.reduce((s, x) => s + Number(x.mg), 0);
+    $('sumCaf').textContent = mg ? mg + ' mg' : '—';
+    $('sumCaf').className = 's-value' + (mg ? ' accent' : '');
+    $('sumCafSub').textContent = mg ? 'caffeine today' : 'none yet';
+
+    // Goals — goals:<activeDate>
+    const goals = loadJSON('goals:' + activeDateKey(), []);
+    const gTotal = Array.isArray(goals) ? goals.length : 0;
+    const gDone = gTotal ? goals.filter(g => g && g.done).length : 0;
+    $('sumGoals').textContent = gTotal ? gDone + '/' + gTotal : '—';
+    $('sumGoals').className = 's-value' + (gTotal && gDone === gTotal ? ' good' : '');
+
+    // Main tile subtitle
+    $('tileMain').textContent = gTotal ? (gDone === gTotal ? 'All goals complete ✓' : gDone + ' of ' + gTotal + ' goals done') : 'Set goals for today';
+  }
+
+  renderSummary();
+  window.addEventListener('storage', renderSummary);
+  window.addEventListener('focus', renderSummary);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) renderSummary(); });
+  setInterval(renderSummary, 30000);
+
+  /* ================= Settings / WHOOP / profile sync (unchanged logic) ================= */
   const WATER_KEY = 'po_water_v1';
   const WHOOP_KEY = 'whoop_tokens_v1';
   const SYNC_KEY  = 'whoop_last_sync';
-
-  function loadJSON(k, f) { try { return JSON.parse(localStorage.getItem(k)) || f; } catch (e) { return f; } }
   function saveJSON(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 
-  // Mirror of topbar.js defaultWaterState so we never clobber the water tracker.
   function defaultWater() {
     return { unit:'bottle', bottleMl:500, glassMl:250, weightUnit:'kg',
       profile:{ weightKg:75, age:25, sex:'m', activityHrsPerWeek:5 },
       caffeineMgPerDay:200, substances:[], logs:{} };
   }
 
-  /* ---------- unit state ---------- */
-  let heightUnit = 'cm';   // 'cm' | 'ft'
-  let weightUnit = 'kg';   // 'kg' | 'lb'
+  let heightUnit = 'cm';
+  let weightUnit = 'kg';
   let sex = 'm';
 
   function setHeightUnit(u) {
@@ -460,7 +446,6 @@ body::after {
     else { const totalIn = cm / 2.54; $('heightA').value = Math.floor(totalIn / 12); $('heightB').value = Math.round(totalIn % 12); }
   }
 
-  /* ---------- load existing profile into the form ---------- */
   function populate() {
     const w = loadJSON(WATER_KEY, defaultWater());
     const p = w.profile || {};
@@ -474,7 +459,6 @@ body::after {
     $('activity').value = (p.activityHrsPerWeek != null ? p.activityHrsPerWeek : '');
   }
 
-  /* ---------- save back into po_water_v1 (merge, never overwrite logs) ---------- */
   function save() {
     const w = loadJSON(WATER_KEY, defaultWater());
     w.profile = w.profile || {};
@@ -488,9 +472,9 @@ body::after {
     saveJSON(WATER_KEY, w);
     const s = $('settingsStatus'); s.textContent = 'Saved ✓';
     setTimeout(() => { s.textContent = ''; }, 1800);
+    renderSummary();
   }
 
-  /* ---------- open / close ---------- */
   function open() { populate(); renderWhoop(); $('settingsBg').classList.add('show'); syncWhoop(); }
   function close() { $('settingsBg').classList.remove('show'); }
   $('settingsOpen').addEventListener('click', open);
@@ -509,7 +493,7 @@ body::after {
   }));
   $('sexSeg').querySelectorAll('button').forEach(b => b.addEventListener('click', () => setSex(b.dataset.s)));
 
-  /* ---------- WHOOP ---------- */
+  /* ---------- WHOOP (unchanged) ---------- */
   let whStats = null;
   function relTime(ts) {
     if (!ts) return 'never';
@@ -523,12 +507,12 @@ body::after {
     const t = loadJSON(WHOOP_KEY, null);
     const statusEl = $('whStatus'), txt = $('whStatusText'), syncEl = $('whSync'), action = $('whAction');
     if (!t || !t.access) {
-      statusEl.classList.remove('on'); txt.textContent = 'Not connected';
+      statusEl.classList.remove('good'); txt.textContent = 'Not connected';
       syncEl.textContent = ''; $('whStats').style.display = 'none';
       action.textContent = 'Connect on Health page';
       return;
     }
-    statusEl.classList.add('on'); txt.textContent = err ? 'Connected (sync failed)' : 'Connected';
+    statusEl.classList.add('good'); txt.textContent = err ? 'Connected (sync failed)' : 'Connected';
     const last = Number(localStorage.getItem(SYNC_KEY)) || 0;
     syncEl.textContent = 'Last synced ' + relTime(last);
     action.textContent = 'Sync now';
@@ -583,21 +567,21 @@ body::after {
   });
 })();
 
-  /* ---------- Cloud sync for body profile ---------- */
-  (function () {
-    var waitForAuth = setInterval(function () {
-      if (window.auth && window.auth.ready) {
-        clearInterval(waitForAuth);
-        window.auth.initSync({
-          appKey: 'health',
-          syncedKeys: ['po_water_v1'],
-          onApplied: function () {
-            window.dispatchEvent(new Event('storage'));
-          }
-        });
-      }
-    }, 100);
-  })();
+/* ---------- Cloud sync for body profile (unchanged) ---------- */
+(function () {
+  var waitForAuth = setInterval(function () {
+    if (window.auth && window.auth.ready) {
+      clearInterval(waitForAuth);
+      window.auth.initSync({
+        appKey: 'health',
+        syncedKeys: ['po_water_v1'],
+        onApplied: function () {
+          window.dispatchEvent(new Event('storage'));
+        }
+      });
+    }
+  }, 100);
+})();
 </script>
 </body>
 </html>
